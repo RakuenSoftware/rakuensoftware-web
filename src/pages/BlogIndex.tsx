@@ -12,9 +12,8 @@ export default function BlogIndex() {
       />
 
       <Hero
-        eyebrow="Blog"
-        title="Notes from the workshop"
-        subtitle="Release notes, design decisions, and the occasional post-mortem."
+        title="Blog"
+        subtitle="Release notes, design decisions and engineering write-ups."
       />
 
       <Section width="narrow">

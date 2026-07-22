@@ -1,37 +1,32 @@
 ---
-title: "SmoothGUI 0.9: the content half of the library"
+title: "SmoothGUI 0.9 adds site and long-form components"
 date: 2026-07-22
 author: Rakuen Software
 tags: [release, smoothgui]
-excerpt: "SmoothGUI was an appliance console library. Version 0.9 adds the primitives for public and long-form pages — and this website is the proof."
+excerpt: "The library that builds our appliance consoles now builds public pages too. This website is the first thing shipped with it."
 ---
 
-SmoothGUI started life as the console vocabulary for SmoothNAS: `AppShell`,
-`Panel`, `DataTable`, `Wizard`. Everything you need to administer an appliance,
-and nothing you need to explain one.
+SmoothGUI started as the console vocabulary for SmoothNAS: `AppShell`, `Panel`,
+`DataTable`, `Wizard`. Everything you need to administer an appliance, and
+nothing you need to explain one.
 
-Version 0.9 adds the other half.
+0.9.0 adds the other half.
 
 ## What is new
 
-Ten components for public, content-led pages:
+`SiteHeader` and `SiteFooter` for page chrome. `Hero`, `Section` and
+`CallToAction` for structure. `FeatureGrid`, `FeatureCard` and `Card` for content
+grids. `Prose` for rendered markdown and `ArticleCard` for listings. `CodeBlock`
+has a copy button and no syntax-highlighting dependency.
 
-- `SiteHeader` and `SiteFooter` for page chrome — the counterpart to `AppShell`,
-  which keeps owning the signed-in console layout
-- `Hero`, `Section` and `CallToAction` for page structure and vertical rhythm
-- `FeatureGrid`, `FeatureCard` and `Card` for content grids
-- `Prose` for rendered markdown, and `ArticleCard` for content listings
-- `CodeBlock`, with copy-to-clipboard and deliberately no highlighting
-  dependency
+There are new dark-band and content-width tokens too, so a hero and a footer
+share one definition of "dark surface" instead of inventing it twice.
 
-Plus dark-band and content-width tokens, so a hero and a footer can share one
-definition of "dark surface" instead of inventing it twice.
+## Routing stays your business
 
-## Routers are the consumer's business
-
-Navigational components need to produce links, but a component library has no
-business deciding how you route. So SmoothGUI does not import a router. Instead
-the navigational components take an optional `linkComponent`:
+Navigational components have to emit links, but a component library has no
+business deciding how you route. SmoothGUI does not import a router. The
+components take an optional `linkComponent` instead:
 
 ```tsx
 const RouterLink: LinkComponent = ({ href, ...rest }) => <Link to={href} {...rest} />;
@@ -39,16 +34,14 @@ const RouterLink: LinkComponent = ({ href, ...rest }) => <Link to={href} {...res
 <SiteHeader brand={<span>Rakuen Software</span>} items={NAV} linkComponent={RouterLink} />
 ```
 
-Pass nothing and you get plain `<a>` elements, which is exactly right for a
-static page. Pass an adapter and you get client-side navigation. The library
-stays out of it either way.
+Pass nothing and you get plain anchors, which is what a static page wants. Pass
+an adapter and you get client-side navigation.
 
-## The constraint that keeps it honest
+## Upgrading
+
+Every existing export is unchanged. It is a purely additive release, so
+consumers move to 0.9.0 without edits.
 
 The same library now ships the appliance console, the installer that runs before
-the appliance exists, and this marketing site. That is a useful constraint: a
-component that only works inside a sidebar layout does not belong in a shared
-library, and building a public site out of it surfaced every place we had
-quietly assumed one.
-
-Every existing export is unchanged. It is a purely additive release.
+the appliance exists, and this website. Building a public site out of a console
+library found every place we had quietly assumed a sidebar.
