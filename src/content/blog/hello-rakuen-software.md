@@ -3,43 +3,49 @@ title: "Introducing Rakuen Software"
 date: 2026-07-22
 author: Rakuen Software
 tags: [announcement]
-excerpt: "Why we build Linux appliances that keep the Linux reachable, and what the Smooth* family is made of."
+excerpt: "What we build, and why the appliances share a kernel, an installer and a component library instead of each maintaining their own."
 ---
 
-Most storage and networking appliances make the same bargain with you: give up
-the underlying system, and in exchange the hard parts get easy. It works right
-up until the moment you need something the vendor did not anticipate. Then the
-abstraction that saved you time becomes the wall you cannot get past.
+We build Linux appliances and the tooling that goes with them.
 
-We build the other thing.
+`SmoothNAS` is a storage appliance running mdadm, LVM and ZFS. `SmoothFS` is the
+stacked kernel filesystem that gives it tiering behind a single mount. `nonraid`
+implements Unraid-style parity arrays in Go. `SmoothRouter` is a Debian router
+administered from a browser. `aimee` is a local server that gives AI coding tools
+persistent memory, a map of your code, cheap delegate models and guardrails they
+cannot write past.
+
+Three more exist so the others can: `SmoothGUI` is the shared React component
+library, `SmoothISO` builds the installer ISOs, and `SmoothKernel` builds the
+kernel.
 
 ## The tools stay reachable
 
-SmoothNAS drives `mdadm`, `LVM` and `ZFS`. SmoothRouter drives `nftables` and
-`dnsmasq`. These are not reimplementations wearing familiar names — they are the
-actual tools, configured by the appliance and still there when you SSH in.
+SmoothNAS drives mdadm, LVM and ZFS. SmoothRouter drives nftables and dnsmasq.
+These are the actual tools, configured by the appliance and still there when you
+SSH in. If the UI cannot do what you need, you have a shell and a system you
+recognise.
 
-The web UI is a convenience, not a cage.
+That matters most when something breaks. An appliance that hides the storage
+stack is an appliance you cannot recover by hand.
 
-## One family, shared foundations
+## Shared foundations
 
-The products are separate, but they are not independent:
+Four flavours need an installer and a kernel. Maintaining four of each would
+guarantee they drift.
 
-- **SmoothKernel** builds one kernel line as Debian packages. Every flavour
-  installs it, so driver coverage and firmware baselines cannot drift apart.
-- **SmoothISO** turns any product into a bootable Debian installer. Products
-  supply hooks; nobody forks the builder.
-- **SmoothGUI** is the component library behind every console, every installer,
-  and the site you are reading right now.
+- `SmoothKernel` builds one kernel line into Debian packages. Every flavour
+  installs the same one, so driver coverage and firmware baselines match.
+- `SmoothISO` builds installer ISOs for any product. Products supply hooks;
+  nobody forks the builder.
+- `SmoothGUI` is one component library across every console, every installer and
+  this site.
 
-Maintaining four kernel pipelines and four installers would guarantee they rot
-at different rates. There is one of each instead, and flavour differences stay
-in userspace where they belong.
+Flavour differences stay in userspace, where they are cheap: udev rules, sysctls,
+tuned profiles, packages, services and UI.
 
-## What is here today
+## What is public
 
-`SmoothNAS`, `SmoothFS`, `nonraid`, `SmoothGUI`, `SmoothISO`, `SmoothKernel`
-and `aimee` are public on [GitHub](https://github.com/RakuenSoftware).
-`SmoothRouter` is running in production but is not public yet.
-
-More to come.
+`smoothnas`, `smoothfs`, `nonraid`, `smoothgui`, `smoothiso`, `smoothkernel` and
+`aimee` are all on [GitHub](https://github.com/RakuenSoftware). SmoothRouter is
+running in production here but is not public yet.

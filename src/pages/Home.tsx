@@ -17,8 +17,8 @@ export default function Home() {
 
       <Hero
         eyebrow="Rakuen Software"
-        title="Appliances that don’t hide the Linux underneath"
-        subtitle="Storage, routing and AI tooling built on mdadm, ZFS, LVM, nftables and dnsmasq — driven by a browser UI, without boxing you out of the tools doing the work."
+        title="Storage, routing and AI tooling built on real Linux"
+        subtitle="Our appliances drive mdadm, ZFS, nftables and dnsmasq rather than replacing them. Manage everything from a browser, and keep every tool you already know when you SSH in."
         actions={
           <>
             <a href="#products"><Button variant="primary">Explore the products</Button></a>
@@ -32,8 +32,8 @@ export default function Home() {
       <Section
         id="products"
         eyebrow="Products"
-        title="One platform, seven pieces"
-        description="Each piece stands alone. Together they are an appliance family sharing a kernel, an installer and a component library."
+        title="What we build"
+        description="Seven products. Each one works on its own, and they share a kernel, an installer and a component library."
         centered
       >
         <FeatureGrid columns={3}>
@@ -50,22 +50,22 @@ export default function Home() {
         </FeatureGrid>
       </Section>
 
-      <Section tone="muted" title="How it fits together" centered>
+      <Section tone="muted" title="Shared foundations" centered>
         <FeatureGrid columns={3}>
           <FeatureCard icon="🐧" title="One kernel">
-            SmoothKernel builds a single kernel line as Debian packages. Every flavour installs it, so driver coverage and firmware baselines never drift apart.
+            SmoothKernel builds a single kernel line into Debian packages. Every flavour installs it, so driver coverage and firmware baselines stay identical across products.
           </FeatureCard>
           <FeatureCard icon="💿" title="One installer">
-            SmoothISO turns any product into a bootable Debian installer, with product behaviour injected through hooks rather than forks.
+            SmoothISO turns any product into a bootable Debian installer. Products supply hooks, so nobody maintains a private branch of the builder.
           </FeatureCard>
           <FeatureCard icon="🎨" title="One interface">
-            SmoothGUI is the component library behind every console, every installer, and this website.
+            SmoothGUI is the component library behind every console, every installer and this website. One fix lands everywhere.
           </FeatureCard>
         </FeatureGrid>
       </Section>
 
       {recent.length > 0 && (
-        <Section title="From the blog" width="narrow">
+        <Section title="Latest posts" width="narrow">
           {recent.map((post) => (
             <ArticleCard
               key={post.slug}
@@ -84,7 +84,7 @@ export default function Home() {
 
       <CallToAction
         title="Run it on hardware you already own"
-        description="Everything public lives on GitHub, licence and all."
+        description="Every public product is on GitHub, licence and all. Clone it and see."
         actions={
           <a href="https://github.com/RakuenSoftware" target="_blank" rel="noreferrer">
             <Button variant="primary">Browse the source</Button>
