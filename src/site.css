@@ -1,0 +1,11 @@
+/* Site-specific overrides. Everything structural comes from smoothgui. */
+
+body {
+  /* smoothgui's base sets the console background; public pages sit on white. */
+  background: var(--sg-surface);
+}
+
+/* Sticky header offset for in-page anchors (e.g. /#products). */
+[id] {
+  scroll-margin-top: 72px;
+}
