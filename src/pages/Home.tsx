@@ -12,7 +12,7 @@ export default function Home() {
     <>
       <Meta
         title="Rakuen Software — Linux storage, routing and AI tooling"
-        description="SmoothNAS, SmoothFS, SmoothRouter, nonraid, aimee and the Smooth* platform: Linux appliances that do not hide the Linux underneath."
+        description="SmoothNAS, SmoothFS, SmoothRouter, nonraid, aimee and the Smooth* platform. Linux appliances built on mdadm, ZFS, nftables and dnsmasq, managed from a browser."
       />
 
       <Hero

@@ -26,8 +26,8 @@ These are the actual tools, configured by the appliance and still there when you
 SSH in. If the UI cannot do what you need, you have a shell and a system you
 recognise.
 
-That matters most when something breaks. An appliance that hides the storage
-stack is an appliance you cannot recover by hand.
+That matters most when something breaks. Recovering a hidden storage stack by
+hand starts with working out what it did to your disks.
 
 ## Shared foundations
 
