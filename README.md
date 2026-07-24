@@ -19,13 +19,27 @@ npm run build      # tsc -b && vite build -> dist/
 npm run preview    # serve the built output locally
 ```
 
-`dist/` is a static bundle. It is served in production by `serve -s` on CT 119
-(`rakuen-web`), behind the nginx-proxy container which terminates TLS. See
-`homelab/bootstrap/13-setup-rakuen-web.sh` in the `infrastructure` repo.
+`dist/` is a static bundle. It is served in production by `serve -s` on CT 121
+(`rakuen-web`, .253), behind the nginx-proxy container (CT 118) which terminates
+TLS for rakuensoftware.com. See `homelab/bootstrap/13-setup-rakuen-web.sh` in the
+`infrastructure` repo for how the host was provisioned.
 
 Because it is a single-page app, the host **must** rewrite unknown paths to
 `index.html` (that is what the `-s` flag does). Without it, `/blog` 404s on a
 hard refresh.
+
+## Deploy
+
+There is no CI. Publishing is: merge to `main`, then run the deploy script on the
+host. It fast-forwards the checkout to `origin/main`, rebuilds, swaps `dist/` in
+atomically, restarts the server, and rolls back if the new bundle fails to serve:
+
+```sh
+# on the host (CT 121):
+/opt/rakuen-web/scripts/deploy.sh
+# or from a box with Proxmox access:
+ssh root@.253 'pct exec 121 -- /opt/rakuen-web/scripts/deploy.sh'
+```
 
 ## Content
 
