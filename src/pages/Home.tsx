@@ -86,9 +86,14 @@ export default function Home() {
         title="Run it on hardware you already own"
         description="Every public product is on GitHub, licence and all. Clone it and see."
         actions={
-          <a href="https://github.com/RakuenSoftware" target="_blank" rel="noreferrer">
-            <Button variant="primary">Browse the source</Button>
-          </a>
+          <>
+            <a href="https://github.com/RakuenSoftware" target="_blank" rel="noreferrer">
+              <Button variant="primary">Browse the source</Button>
+            </a>
+            <a href="https://discord.gg/FjGjvcgAqz" target="_blank" rel="noreferrer">
+              <Button variant="default">Join the Discord</Button>
+            </a>
+          </>
         }
       />
     </>

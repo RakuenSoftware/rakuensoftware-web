@@ -9,6 +9,7 @@ const NAV: SiteNavItem[] = [
   { label: 'Products', href: '/#products' },
   { label: 'Blog', href: '/blog' },
   { label: 'GitHub', href: 'https://github.com/RakuenSoftware', external: true },
+  { label: 'Discord', href: 'https://discord.gg/FjGjvcgAqz', external: true },
 ];
 
 const FOOTER_GROUPS: SiteFooterGroup[] = [
@@ -21,6 +22,7 @@ const FOOTER_GROUPS: SiteFooterGroup[] = [
     links: [
       { label: 'Blog', href: '/blog' },
       { label: 'GitHub', href: 'https://github.com/RakuenSoftware', external: true },
+      { label: 'Discord', href: 'https://discord.gg/FjGjvcgAqz', external: true },
     ],
   },
 ];
