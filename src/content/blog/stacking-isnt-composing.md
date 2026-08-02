@@ -3,69 +3,182 @@ title: "Stacking isn't composing"
 date: 2026-07-24
 author: Rakuen Software
 tags: [agents, llm, architecture, aimee]
-excerpt: "Every AI stack is sold as modular: snap in a token compressor, a cache planner, a memory layer. Turn them on together and they fight over the same bytes. The trouble is in the handoffs, the one place no addon owns. aimee routes every interaction across one recorded bus instead."
+excerpt: "RTK rewrites shell output. Memory stores that view. Headroom compresses it again. One confused extra turn can cost more than the context they removed."
 ---
 
-Every AI stack is sold as modular. Snap in a token compressor, a cache planner, a memory layer, and each one promises the same thing: install it and things get better.
+[RTK](https://github.com/rtk-ai/rtk/blob/e0ffd40ef7c450489aca4a50c0ab1358e4375691/README.md#how-savings-work)
+rewrites supported shell output before the agent reads it. Bolt on a semantic
+memory add-on and it stores the view it receives, which now contains
+RTK's rewrite. When memory recalls that view later,
+[Headroom](https://github.com/headroomlabs-ai/headroom/blob/6d5516dcb878b6ffd139a1c7b3d480a1c8c1beb9/headroom/ccr/response_handler.py#L420-L529)
+compresses the assembled request again.
 
-So you do. `Headroom` claws back context-window space. `RTK` gets more out of the provider's cache. Both work when they're the only one running. Turn them on together and the bill goes up, the context gets worse, and recall starts missing things it used to find. You lose an afternoon trying to figure out which addon regressed, and the answer is that none of them did.
+Headroom can recover the original block Headroom received. It cannot restore
+detail RTK removed before that request existed, and memory cannot recall detail
+it never indexed. RTK reduced the shell output. Memory found a match. Headroom
+reduced the request. All three worked.
 
-The reason is that they were never really separate. `Headroom`'s whole job is to remove context. `RTK`'s whole job is to keep the prefix stable so the cache keeps paying off. They want opposite things from the same bytes and neither one can see the other. `Headroom` rewrites the prefix `RTK` was relying on, and a read that should have been discounted gets billed as a fresh write. `RTK` holds onto context `Headroom` is trying to shed. Whoever runs last gets their way, which means the result depends on the order the plugins happened to load.
+The combined agent can still need another model call to retrieve what Headroom
+removed, work from detail RTK already discarded, or recall the same incomplete
+fact again. Three local savings have become a larger bill.
 
-The memory layer makes it a three-way problem. Memory's job is to put the right fact in front of the model at the moment it's needed, and it's sitting on top of one addon that deletes context and another that won't let it move. It recalls a fact, `Headroom` folds the fact back out to save space, and next turn memory recalls it again. There's a quieter version of the same problem underneath. Memory decides what's worth storing based on what it can see, but what it sees has already been summarized by `Headroom` and shuffled by `RTK`, so it ends up indexing a garbled version of the session and recalling the wrong things later. That drift builds up over weeks.
+Context cost is linear: send twice as many uncached input tokens in one call
+and you pay for twice as many input tokens. Turn cost compounds. Each new call
+resends the accumulated conversation and adds another turn to it. If that
+history grows by a similar amount per turn, the total context processed follows
+`1 + 2 + ... + n`. It grows quadratically with the number of turns.
 
-None of the addons has a bug. Each one is doing exactly what it was built to do. The trouble is in the handoffs between them, which is the one place no addon is looking and no addon owns. They all report success to their own dashboards while the thing as a whole gets slower, dumber, and more expensive.
+This is why unusable context is not merely a quality problem. If the agent
+cannot make sense of a shortened, recalled and recompressed view, the recovery
+turn pays for that view again, the rest of the live history and the new request.
+Giving the agent the original context once can be cheaper than giving it less
+context and making it ask twice.
 
-## Stacking isn't composing
+That is stacking. Each add-on is deterministic inside its own hook. Their
+combined behaviour depends on which view each hook receives, which client path
+ran and which transformation landed first. No add-on owns that sequence. No
+add-on can predict the bill it produces. Installability is not composition.
 
-Pure functions compose because they keep their hands off shared state. Addons don't have that luxury. Each of them works by editing the same thing, the context window and the request built from it. It's one shared resource, and each addon's edit lands on top of everyone else's. It's stateful, so the order of the edits changes the result. And the numbers that actually decide cost and quality, the provider's cache state and real billing, live behind an API that only tells you what happened after you've already paid for it.
+## Three correct tools see three different sessions
 
-So every addon ends up chasing a number it can measure instead of the one that matters. `Headroom` watches token count, `RTK` watches cache hits, memory watches similarity scores. Each number can look great on its own while the answers get worse and the bill climbs. (The provider-pricing half of this, why shaving tokens off a prompt can raise your bill instead of lowering it, is its own post: [token compression tools measure the wrong thing](/blog/token-compression-tools-cost-more-than-they-save).)
+RTK's contract ends when it emits shorter shell output. It cannot say whether a
+later memory hook stores the raw command result or the rewritten one, because
+the raw result has already gone. That is not a defect in RTK. Filtering the
+output is its job.
 
-This isn't a `Headroom` problem or an `RTK` problem. Both are sensible. It's the arrangement that's broken: several things editing one shared resource with no agreement on order, no shared goal, and no record of who changed what. Swap in better addons and the next pair collides in the same place.
+The semantic memory add-on indexes the session its host exposes. When it recalls
+a fact, it puts text back into a later request. It does not know that RTK removed
+detail upstream, or that Headroom may replace the recalled block downstream.
+Similarity can be high while the available fact is incomplete.
 
-## Doing both
+Headroom's contract begins at the assembled model request. Its proxy compresses
+new material, preserves stable cache prefixes and keeps the pre-compression
+block for retrieval. That recovery is real. It reaches back to Headroom's
+input, not past it to the shell output RTK already changed. When retrieval
+fires, Headroom appends the recovered block as a tool result and makes another
+continuation call.
 
-`aimee` does this same work. It compresses, it manages headroom, it plans around the cache. What it doesn't do is produce these fights, and that comes down to two things it handles at once.
+The strongest case for stacking is replaceability. Independent tools let an
+operator choose one component, upgrade it alone and remove it without replacing
+the system. Keep that property. It does not supply the missing cross-tool
+contract. RTK owns its output rewrite. Memory owns its index and recall.
+Headroom owns its request compression and recovery. No component owns the
+history all three are changing.
 
-The first is that it prices its edits against what they actually cost. It knows the difference between an uncached token, a cache read at a discount, and a write at full price, and it knows that shaving a few tokens off the front of the prompt can flip a cheap read into an expensive write. So it only makes the edit when the real bill goes down. The `Headroom`/`RTK` fight never starts, because the thing trimming the context is the same thing that understands the cache, and it won't make a cut that throws the read away.
+That is the finding. A joint trace is needed to quantify the resulting bill,
+recall loss or frequency. It is not needed to establish that independently
+integrated add-ons lack a guaranteed shared order of operation.
 
-The second is that its memory isn't stacked on top of the economizer. They're peers. This is the part the opening story quietly gave away by calling the third box a semantic-memory layer, because a bolted-on box really is just that. All it can do from up there is embed whatever text it's handed and look it up later.
+*Correction, 2 August 2026: The previous version did not preserve the traces
+behind its joint add-on account, so its exact cost and recall outcome is not a
+measurement. That limit does not change the architectural finding.*
 
-`aimee`'s memory does more than look things up. It pulls structured facts out of a session, decides what's worth keeping, tracks where each fact came from and how much to trust it, drops old facts when newer ones replace them, and links facts to your actual code. You can't get any of that from a box bolted onto the context window, because every one of those jobs depends on another part of the system. Extraction needs the extractors. Knowing where a fact came from needs the vault and the source connectors. Grounding needs the code map. Deciding what to trust and what to retire needs the guardrails and the audit trail. Cut memory off from those neighbors and it collapses back into a plain semantic-memory layer. The extra depth was never in the memory box itself; it was in memory being able to reach the rest of the system.
+This is reported analysis based on pinned public source for RTK, Headroom and
+`aimee`. The source establishes how the parts work. The conclusion about their
+composition is mine.
 
-## The seam
+Disclosure: Rakuen Software builds `aimee`. Its architecture is evidence for
+the ordering and ownership claims here, not for a cost or quality outcome.
 
-If every module called every other module directly, you'd have the usual tangle, where nothing can change without breaking something two rooms over. `aimee`'s modules don't call each other at all. They speak to one event bus. A module puts typed events onto it and reads the ones it cares about, and that's the whole story of how any two parts of `aimee` interact.
+## The bus provides the guarantees composition needs
 
-The words "event bus" usually bring to mind a broker off in its own process, waiting over a socket, a network hop in each direction, and messages quietly dropped when things back up. `aimee`'s bus isn't that. It runs in-process. A module hands a typed event to a single host inside the same address space, so putting an event on the bus is about as expensive as a function call, not a network trip. That's what lets it carry real-time work, an economizer pricing an edit or a guardrail rating a request mid-turn, instead of just logging. Events come through one host and one consumer in a fixed order, and when the consumer gets behind the bus blocks and drops nothing. Everything that goes across gets written down as it passes.
+The current [`aimee` event-bus
+contract](https://github.com/RakuenSoftware/aimee/blob/72234117fb4155103a59a484459fa902363e2715/docs/modules/bus.md)
+gives each source FIFO delivery and stamps a global accepted order before
+routing. Operations that use the bus therefore enter the system in an order
+chosen by the host, and consumers observe that order. It also gives the stages
+bounded backpressure, typed absence and one full-stream tap. These are the
+cross-stage guarantees that let their contracts compose.
 
-A few things fall out of that. A new module wires into the bus once and immediately has memory, the economizer, the guardrails, and audit within reach, without learning any of their internals. Adding the tenth module is as easy as adding the second. And because a module can reach the whole system through the bus, it doesn't have to be linked against the whole system: the vault, for instance, needs audit to see what it does, but it's compiled into a lot of binaries and audit isn't, so instead of calling audit directly it emits a hook that does nothing by default, and one small bridge wires that hook to the bus in the one place that makes sense.
+The bus does not own workflow scheduling. A scheduler still decides which
+operations a workflow should issue and when to issue them. The bus controls the
+accepted order of those operations once issued. Every stage therefore acts
+against the same sequence instead of the order in which independent hooks
+happen to run.
 
-The bus is also just a contract about events, not a library you compile in, so it isn't tied to `aimee`'s language. There are reference implementations in a few languages, and anything that speaks the protocol, whether a Python script or a Rust sidecar, is a full participant at runtime. Something out of process pays the cost of talking across a boundary, but it still gets the same ordering and the same recording as everything native.
+Composition is the stage contracts plus the bus. The contracts define what an
+operation means, which stage owns it and what the next stage may assume. The bus
+enforces the shared order and delivery rules across those contracts. Remove
+either half and the stages stop composing.
 
-## Reproducibility
+## The bus makes replay possible
 
-Because every interaction goes across the bus and the bus writes down what crosses it, the recording is the entire run and not a sample of it. This is exactly what a plugin stack can't manage. In a stack the addons talk through back channels no one is recording, so the log always has holes, and the moment that actually caused the problem is usually in one of them. Play the log back and you're really just playing back the parts you happened to capture.
+The bus is the enabling seam for both capture and audit. Its full-stream tap
+feeds ordered capture, and its observability bridge carries governed actions to
+consumers that drain them into audit sinks. Without the bus, those paths would
+need separate wiring and could disagree about order.
 
-`aimee`'s recording is complete because there's no back channel to miss. Feed the events back through and you get the same run again, in the same order, with the same decisions. That's what makes the rest possible. You can show precisely what happened and why: which guardrail stopped a request, which economizer changed a prompt, what the vault handed back. Refusals are written down the same as anything else, so a credential denied over the wrong transport shows up in the ledger. When something goes wrong you replay the exact session instead of reconstructing it from fragments. A recorded session becomes a regression test that doesn't flake, because the run is faithful and any change in behavior is a real one. And because all of this rides the bus rather than any one module's internals, a module written in any language is auditable on the same footing as the rest.
+Capture and WORM audit remain separate subsystems inside `aimee`, with the bus
+underneath both. The [`aimee` bus working
+guide](https://github.com/RakuenSoftware/aimee/blob/72234117fb4155103a59a484459fa902363e2715/docs/EVENT_BUS.md)
+describes capture records containing the accepted frame and its materialised
+payload in bus order. That ordered stream is the input a replay system needs.
+The current reader exposes observational replay. Execution replay can consume
+the same record as module replay contracts are added.
 
-Normally extending a system costs you some control, because each new plugin is another place behavior can slip past whatever you're watching. Here the only way to join is through the recorded bus, so there's no such thing as opening a path nobody can see.
+The bus carries audit events. The [audit
+module](https://github.com/RakuenSoftware/aimee/blob/72234117fb4155103a59a484459fa902363e2715/docs/modules/audit.md)
+owns safe record formation, storage and verification. Its WORM store has
+append-only triggers, a hash chain and keyed checkpoints when enabled. Capture
+supplies the ordered accepted stream. Audit supplies a tamper-evident record of
+the governed events it receives from that stream.
 
-## Believing the record
+This is the architectural consequence of one bus: capture, audit and replay can
+share the same accepted order without becoming one subsystem. Full execution
+replay is another consumer of that record, not another back channel that must
+reconstruct the run.
 
-There's still a fair objection: `aimee` writes this record about itself, and anything in full control of its own logs can produce a spotless account of things that never happened. Recording everything doesn't make the recording honest. Two things deal with that.
+## Composition assigns an owner to every shared decision
 
-The ledger can't be edited after the fact. It's append-only and hash-chained, so every entry is tied to the ones before it, and altering an old event, dropping a denial, or slipping in a fake one breaks the chain at once.
+A composable agent system needs a contract at each place where modules can
+change one another's result:
 
-And the record gets compared against numbers `aimee` doesn't control. If it says an edit saved money, the provider's own usage and billing say whether that's true. If `aimee` says an action ran, it shows up in external logs `aimee` has no control over. When the inside account and the outside account line up, that agreement means something precisely because `aimee` only wrote one side of it. When they don't line up, the mismatch is easy to spot and tells you where to look.
+- **Assign one writer.** One stage owns the final form of each shared resource.
+  Other modules propose changes or consume named views.
 
-With the ledger sealed against edits and reconciled against the outside, you don't have to take `aimee`'s word for what happened; you can check it. A plugin stack has no way to offer that. It can't hand you a complete account that squares with an outside source, because there's no single account of what the stack did in the first place.
+- **Fix the stage order.** A context reduction before the first cache write is
+  a different operation from the same reduction after it. The pipeline records
+  which one happened.
 
-## Close
+- **Declare failure.** Each boundary says whether pressure blocks, sheds,
+  retries or aborts. A local success cannot conceal a failed consumer.
 
-That lost afternoon chasing three addons that all turned out to be fine wasn't really a debugging problem. Each one did its job, the bill still went up, and when it was over there was no way to say what had actually happened, because nothing had recorded the parts where the addons touched. Any system that lets separate pieces edit one shared, hidden thing is one unlucky combination away from the same afternoon.
+- **Measure the completed outcome.** Token count, cache activity and retrieval
+  score diagnose parts. Cost and quality per successful task judge the system.
 
-Everything here traces back to a single choice: every interaction goes across one recorded, ordered, tamper-evident bus, and nothing goes anywhere else. That one choice is why the economizers cooperate with memory, why a module in any language can join at runtime, why a session replays exactly, and why an outsider can check the record. The usual pitch treats modularity as independence, as parts that know nothing about each other and click together, and independence is exactly what sends those parts fighting in the dark with no one able to say what went wrong.
+- **Separate action from evidence.** Transport moves the decision. Capture
+  records an observation. Audit protects a bounded claim about it. An external
+  result can test that claim.
 
-A plugin stack asks you to trust each addon and gives you no way to check. `aimee` asks you to trust one bus, and lets you check that too.
+For the context example, the contract could give one gateway stage ownership of
+the provider request. The output reducer would submit a typed candidate change.
+The cache policy would accept or reject it against the prefix already written.
+Memory would receive an explicit original or reduced view rather than whichever
+string happened to be left. The specific design can change. The ownership
+cannot stay implicit.
+
+## `aimee` keeps one recoverable history
+
+`aimee` converts each provider request to canonical IR before the economizer
+touches it. In the safe tier, command condensation keeps failures and
+diagnostics, writes the full tool output to a bounded spill and leaves a
+recovery pointer. Folding and condensation happen before cache alignment.
+Provider translation happens last. One stage owns each transformation, and the
+next stage receives the result named by that contract.
+
+Memory runs inside the [ordered gateway
+pipeline](https://github.com/RakuenSoftware/aimee/blob/72234117fb4155103a59a484459fa902363e2715/docs/modules/gateway.md).
+The event bus gives operations across those stages one accepted order, enables
+full-stream capture and carries governed actions to audit. Memory does not have
+to infer which add-on rewrote the session. Cache alignment does not discover a
+context edit after it happened. Recovery reaches the tool output preserved by
+the same system, not the last lossy view one add-on happened to receive.
+
+That architecture does not prove a lower cost or better answer. It proves the
+difference the article turns on: the stack gives three tools three partial
+histories; `aimee` gives contracted stages one ordered, recoverable history.
+
+Before installing two agent add-ons, write down the shared resources, the owner
+of each final value, the stage order, the failure rule and the outcome measure.
+If the tools cannot fit that contract, the stack is still an experiment. Run it
+as one, keep the handoff traces, and do not call it composed yet.
