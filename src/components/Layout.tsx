@@ -4,6 +4,7 @@ import { SiteFooter, SiteHeader } from '@rakuensoftware/smoothgui';
 import type { SiteFooterGroup, SiteNavItem } from '@rakuensoftware/smoothgui';
 import { PRODUCTS } from '../content/products';
 import RouterLink from './RouterLink';
+import ThemeToggle from './ThemeToggle';
 
 const NAV: SiteNavItem[] = [
   { label: 'Products', href: '/#products' },
@@ -46,6 +47,7 @@ export default function Layout() {
         brand={<RouterLink href="/">Rakuen Software</RouterLink>}
         items={NAV}
         activeHref={pathname.startsWith('/blog') ? '/blog' : undefined}
+        actions={<ThemeToggle />}
         linkComponent={RouterLink}
       />
       <main>

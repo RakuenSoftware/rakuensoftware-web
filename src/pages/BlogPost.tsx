@@ -20,7 +20,10 @@ export default function BlogPost() {
 
       <Section width="narrow">
         {post.tags.length > 0 && (
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 24 }}>
+          <div
+            className="site-post-tags"
+            style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 24 }}
+          >
             {post.tags.map((tag) => <Badge key={tag} label={tag} variant="neutral" />)}
           </div>
         )}
