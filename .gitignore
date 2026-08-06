@@ -8,6 +8,10 @@ dist/
 src/content/posts/
 .blog-cache/
 
+# Written by autopublish.sh. Must be ignored, or it makes the checkout dirty
+# and deploy.sh refuses to run.
+.last-blog-sha
+
 # Agent working directories
 .aimee/
 .claude/

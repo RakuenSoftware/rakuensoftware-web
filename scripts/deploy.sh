@@ -39,26 +39,33 @@ SERVICE=rakuen-web.service
 
 cd "$REPO"
 
-if [ -n "$(git status --porcelain)" ]; then
-  echo "refusing to deploy: working tree at $REPO has local changes" >&2
-  git status --short >&2
-  exit 1
-fi
-
-echo "==> Syncing $BRANCH"
-git fetch --quiet origin "$BRANCH"
-old_rev=$(git rev-parse --short HEAD)
-git reset --hard --quiet "origin/$BRANCH"
-new_rev=$(git rev-parse --short HEAD)
-echo "    $old_rev -> $new_rev"
-
-# node_modules and the vendored smoothgui tarball are already present; only pay
-# for a reinstall when the lockfile actually changed between the two revisions.
-if ! git diff --quiet "$old_rev" "$new_rev" -- package-lock.json; then
-  echo "==> package-lock.json changed, running npm ci"
-  npm ci --no-audit --no-fund
+# ARTICLES_ONLY=1 rebuilds from the current checkout without moving it. The
+# autopublish timer uses it, so a new article never drags along whatever code
+# happens to be sitting on main. Code changes stay a deliberate deploy.
+if [ "${ARTICLES_ONLY:-0}" = "1" ]; then
+  echo "==> Articles only, leaving the checkout at $(git rev-parse --short HEAD)"
 else
-  echo "==> Dependencies unchanged, skipping install"
+  if [ -n "$(git status --porcelain)" ]; then
+    echo "refusing to deploy: working tree at $REPO has local changes" >&2
+    git status --short >&2
+    exit 1
+  fi
+
+  echo "==> Syncing $BRANCH"
+  git fetch --quiet origin "$BRANCH"
+  old_rev=$(git rev-parse --short HEAD)
+  git reset --hard --quiet "origin/$BRANCH"
+  new_rev=$(git rev-parse --short HEAD)
+  echo "    $old_rev -> $new_rev"
+
+  # node_modules and the vendored smoothgui tarball are already present; only pay
+  # for a reinstall when the lockfile actually changed between the two revisions.
+  if ! git diff --quiet "$old_rev" "$new_rev" -- package-lock.json; then
+    echo "==> package-lock.json changed, running npm ci"
+    npm ci --no-audit --no-fund
+  else
+    echo "==> Dependencies unchanged, skipping install"
+  fi
 fi
 
 echo "==> Pulling articles"
