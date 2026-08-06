@@ -13,9 +13,19 @@
 # own code changes, because articles are pulled at build time.
 #
 # What it does: fast-forward the checkout to origin/main, install deps only if
-# the lockfile moved, build into a scratch dir, swap it into place atomically,
-# restart the server, and verify the new bundle is being served — rolling back
-# to the previous dist if the check fails, so a broken build never goes live.
+# the lockfile moved, pull the articles, build into a scratch dir, swap it into
+# place atomically, restart the server, and verify the new bundle is being
+# served — rolling back to the previous dist if the check fails, so a broken
+# build never goes live.
+#
+# Deliberate tradeoff: this repo does not pin an article revision. It is a
+# renderer over rakuen-blog main, so a deploy publishes whatever that branch says
+# at the moment it runs. Two consequences worth knowing before you are surprised
+# by them. Redeploying an older commit of THIS repo does not restore the article
+# text that was live then, only the code. And the rollback below restores the
+# previous dist, which is a real rollback, but redeploying after it will pull
+# current articles again. If you need an exact past state, check out the article
+# revision you want in a local clone and build with BLOG_LOCAL pointed at it.
 #
 # Usage (from the host):   /opt/rakuen-web/scripts/deploy.sh
 # Usage (from a jump box): ssh root@192.168.1.253 'pct exec 107 -- /opt/rakuen-web/scripts/deploy.sh'
