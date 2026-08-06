@@ -14,15 +14,17 @@ export interface Post {
 }
 
 /**
- * Blog posts are markdown files committed alongside the site. Vite inlines their
- * source into the bundle at build time, so there is no runtime fetch and no CMS
- * to operate. The markdown-to-HTML transform runs once at module init.
+ * Blog posts are pulled from the rakuen-blog repository by
+ * scripts/sync-articles.mjs, which runs before every build, and written into
+ * src/content/posts. That directory is generated: to change an article, change
+ * it in rakuen-blog. Vite inlines the markdown into the bundle at build time,
+ * so there is no runtime fetch and no CMS to operate.
  *
  * Frontmatter is validated during the build by the checkPosts plugin in
  * vite.config.ts, so a malformed post fails `npm run build` rather than
  * reaching a browser.
  */
-const files = import.meta.glob('../content/blog/*.md', {
+const files = import.meta.glob('../content/posts/*.md', {
   query: '?raw',
   import: 'default',
   eager: true,

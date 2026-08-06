@@ -2,3 +2,12 @@ node_modules/
 dist/
 *.local
 .DS_Store
+
+# Pulled from rakuen-blog by scripts/sync-articles.mjs before every build.
+# Generated: change an article in rakuen-blog, not here.
+src/content/posts/
+.blog-cache/
+
+# Agent working directories
+.aimee/
+.claude/

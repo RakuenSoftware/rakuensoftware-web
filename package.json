@@ -4,8 +4,11 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "sync": "node scripts/sync-articles.mjs",
+    "predev": "node scripts/sync-articles.mjs",
     "dev": "vite",
     "check": "tsc -b",
+    "prebuild": "node scripts/sync-articles.mjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
   },

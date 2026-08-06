@@ -2,13 +2,15 @@
 #
 # Deploy rakuensoftware.com.
 #
-# Runs on the rakuen-web host (Proxmox CT 121 on .253), where this repo is
+# Runs on the rakuen-web host (Proxmox CT 107 on 192.168.1.253), where this repo is
 # checked out at /opt/rakuen-web and served by the rakuen-web.service unit:
 #
 #     ExecStart=/usr/local/bin/serve -s /opt/rakuen-web/dist -l 3000
 #
-# The nginx-proxy container (CT 118) terminates TLS for rakuensoftware.com and
-# forwards to :3000. There is no CI; publishing is: land on main, then run this.
+# The nginx-proxy container (CT 105) terminates TLS for rakuensoftware.com and
+# forwards to :3000. There is no CI; publishing is: land the article on
+# rakuen-blog main, then run this. The site itself only needs a deploy when its
+# own code changes, because articles are pulled at build time.
 #
 # What it does: fast-forward the checkout to origin/main, install deps only if
 # the lockfile moved, build into a scratch dir, swap it into place atomically,
@@ -16,7 +18,7 @@
 # to the previous dist if the check fails, so a broken build never goes live.
 #
 # Usage (from the host):   /opt/rakuen-web/scripts/deploy.sh
-# Usage (from a jump box): ssh root@.253 'pct exec 121 -- /opt/rakuen-web/scripts/deploy.sh'
+# Usage (from a jump box): ssh root@192.168.1.253 'pct exec 107 -- /opt/rakuen-web/scripts/deploy.sh'
 
 set -euo pipefail
 
@@ -48,6 +50,9 @@ if ! git diff --quiet "$old_rev" "$new_rev" -- package-lock.json; then
 else
   echo "==> Dependencies unchanged, skipping install"
 fi
+
+echo "==> Pulling articles"
+node scripts/sync-articles.mjs
 
 echo "==> Building"
 rm -rf dist.new
