@@ -79,3 +79,27 @@ body {
   outline: 2px solid var(--sg-primary);
   outline-offset: 2px;
 }
+
+/* The fact-extraction lead figure has a third view for the original ranked
+ * chart. SmoothGUI supplies the two-view Chart/Numbers behavior; this extends
+ * the same radio-tab pattern without changing figures elsewhere. */
+.sg-figure__radio--ranked:checked
+  ~ .sg-figure__tabs
+  .sg-figure__tab--ranked {
+  background: var(--sg-primary);
+  border-color: var(--sg-primary);
+  color: var(--sg-surface);
+}
+
+.sg-figure__radio--ranked:focus-visible
+  ~ .sg-figure__tabs
+  .sg-figure__tab--ranked {
+  outline: 2px solid var(--sg-info);
+  outline-offset: 2px;
+}
+
+.sg-figure__radio--ranked:checked
+  ~ .sg-figure__panes
+  .sg-figure__pane--ranked {
+  display: block;
+}
