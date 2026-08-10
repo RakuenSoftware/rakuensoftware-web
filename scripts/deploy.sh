@@ -5,7 +5,7 @@
 # Runs on the rakuen-web host (Proxmox CT 107 on 192.168.1.253), where this repo is
 # checked out at /opt/rakuen-web and served by the rakuen-web.service unit:
 #
-#     ExecStart=/usr/local/bin/serve -s /opt/rakuen-web/dist -l 3000
+#     ExecStart=/usr/bin/node /opt/rakuen-web/server.mjs
 #
 # The nginx-proxy container (CT 105) terminates TLS for rakuensoftware.com and
 # forwards to :3000. There is no CI; publishing is: land the article on
@@ -38,6 +38,8 @@ PORT=3000
 SERVICE=rakuen-web.service
 
 cd "$REPO"
+old_rev=$(git rev-parse --short HEAD)
+new_rev=$old_rev
 
 # ARTICLES_ONLY=1 rebuilds from the current checkout without moving it. The
 # autopublish timer uses it, so a new article never drags along whatever code
@@ -53,7 +55,6 @@ else
 
   echo "==> Syncing $BRANCH"
   git fetch --quiet origin "$BRANCH"
-  old_rev=$(git rev-parse --short HEAD)
   git reset --hard --quiet "origin/$BRANCH"
   new_rev=$(git rev-parse --short HEAD)
   echo "    $old_rev -> $new_rev"
@@ -79,6 +80,13 @@ echo "==> Swapping dist into place"
 rm -rf dist.prev
 [ -d dist ] && mv dist dist.prev
 mv dist.new dist
+
+# Keep the checked-in service definition authoritative. Besides serving the
+# public bundle, it starts the private analytics dashboard on its own port.
+if ! cmp -s scripts/rakuen-web.service /etc/systemd/system/rakuen-web.service; then
+  install -m 0644 scripts/rakuen-web.service /etc/systemd/system/rakuen-web.service
+  systemctl daemon-reload
+fi
 systemctl restart "$SERVICE"
 
 echo "==> Verifying"
@@ -86,7 +94,8 @@ asset=$(grep -oE 'assets/index-[^"]+\.js' dist/index.html | head -1)
 ok=""
 for _ in 1 2 3 4 5; do
   sleep 1
-  if curl -fsS "http://127.0.0.1:$PORT/$asset" -o /dev/null; then ok=1; break; fi
+  if curl -fsS "http://127.0.0.1:$PORT/$asset" -o /dev/null \
+    && curl -fsS "http://127.0.0.1:$PORT/__analytics/health" -o /dev/null; then ok=1; break; fi
 done
 
 if [ -n "$ok" ]; then

@@ -5,6 +5,7 @@ import type { SiteFooterGroup, SiteNavItem } from '@rakuensoftware/smoothgui';
 import { PRODUCTS } from '../content/products';
 import RouterLink from './RouterLink';
 import ThemeToggle from './ThemeToggle';
+import { trackPageView } from '../lib/analytics';
 
 const NAV: SiteNavItem[] = [
   { label: 'Products', href: '/#products' },
@@ -29,7 +30,11 @@ const FOOTER_GROUPS: SiteFooterGroup[] = [
 ];
 
 export default function Layout() {
-  const { pathname, hash } = useLocation();
+  const { pathname, hash, search } = useLocation();
+
+  useEffect(() => {
+    trackPageView(`${pathname}${search}`);
+  }, [pathname, search]);
 
   // Client-side navigation does not reset scroll on its own, and an in-page
   // anchor must still win when one is present.

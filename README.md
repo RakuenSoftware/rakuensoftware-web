@@ -17,16 +17,40 @@ npm run dev
 ```sh
 npm run build      # tsc -b && vite build -> dist/
 npm run preview    # serve the built output locally
+npm start          # public site :3000 + private analytics :3001
+npm test           # analytics aggregation and access-control tests
 ```
 
-`dist/` is a static bundle. It is served in production by `serve -s` on CT 121
+`dist/` is a static bundle. It is served in production by `server.mjs` on CT 121
 (`rakuen-web`, .253), behind the nginx-proxy container (CT 118) which terminates
 TLS for rakuensoftware.com. See `homelab/bootstrap/13-setup-rakuen-web.sh` in the
 `infrastructure` repo for how the host was provisioned.
 
 Because it is a single-page app, the host **must** rewrite unknown paths to
-`index.html` (that is what the `-s` flag does). Without it, `/blog` 404s on a
-hard refresh.
+`index.html`. The production server does this itself; without that fallback,
+`/blog` 404s on a hard refresh.
+
+## Analytics
+
+The production server records first-party, cookie-free page views at
+`/__analytics/pageview`. It stores random visitor and session IDs, page paths,
+referrers, UTM source/campaign values, and a coarse device class. It does not
+store IP addresses, and browsers with Do Not Track enabled are skipped. Ingest
+is capped per minute and per visitor; records are retained for 400 days. Data is
+written as JSON Lines to `/var/lib/rakuen-web/pageviews.jsonl` by the systemd
+service.
+
+The dashboard is served separately on port 3001. Requests are checked against
+the socket's remote address and only `192.168.0.0/23` is accepted—including no
+loopback exception. `X-Forwarded-For` is deliberately not trusted. The defaults
+can be changed with `ANALYTICS_PORT`, `ANALYTICS_ALLOWED_CIDR`,
+`ANALYTICS_DATA_DIR`, `ANALYTICS_RETENTION_DAYS`, and `SITE_HOST` in the service
+unit. The dashboard shows
+unique visitors, page views, visits, bounce rate, traffic trends, acquisition
+sources, top pages, and device mix for 7, 30, or 90 days.
+
+During `vite` development, tracking is disabled by default. Set
+`VITE_ANALYTICS_ENABLED=true` only when intentionally exercising the collector.
 
 ## Deploy
 
