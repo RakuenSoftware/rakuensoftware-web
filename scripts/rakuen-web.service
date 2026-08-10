@@ -1,0 +1,26 @@
+[Unit]
+Description=Rakuen Software website and private analytics
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/rakuen-web
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=ANALYTICS_PORT=3001
+Environment=ANALYTICS_ALLOWED_CIDR=192.168.0.0/23
+Environment=ANALYTICS_DATA_DIR=/var/lib/rakuen-web
+ExecStart=/usr/bin/node /opt/rakuen-web/server.mjs
+Restart=on-failure
+RestartSec=2s
+StateDirectory=rakuen-web
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+
+[Install]
+WantedBy=multi-user.target
