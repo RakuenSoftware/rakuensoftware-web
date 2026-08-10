@@ -1,0 +1,13 @@
+[Unit]
+Description=Publish rakuensoftware.com articles when rakuen-blog moves
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/rakuen-web
+ExecStart=/opt/rakuen-web/scripts/autopublish.sh
+# A failed build must not leave a half-published site. deploy.sh swaps dist
+# atomically and rolls back on a failed verify, so a failure here means the
+# previous site is still being served and the next tick will retry.
+TimeoutStartSec=600

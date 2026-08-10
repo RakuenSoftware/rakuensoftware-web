@@ -1,0 +1,13 @@
+[Unit]
+Description=Check rakuen-blog for new articles every few minutes
+
+[Timer]
+# Three minutes is well inside the noise of writing an article, and the check
+# itself is one ls-remote against a public repository.
+OnBootSec=2min
+OnUnitActiveSec=3min
+AccuracySec=30s
+Unit=rakuen-autopublish.service
+
+[Install]
+WantedBy=timers.target
