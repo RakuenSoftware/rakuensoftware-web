@@ -9,8 +9,9 @@
 #
 # The nginx-proxy container (CT 105) terminates TLS for rakuensoftware.com and
 # forwards to :3000. There is no CI; publishing is: land the article on
-# rakuen-blog main, then run this. The site itself only needs a deploy when its
-# own code changes, because articles are pulled at build time.
+# rakuen-blog main, add its slug to PUBLISHED in scripts/sync-articles.mjs, then
+# run this. Landing on rakuen-blog alone does not publish anything, which is the
+# point: the site holds the decision about what goes live.
 #
 # What it does: fast-forward the checkout to origin/main, install deps only if
 # the lockfile moved, pull the articles, build into a scratch dir, swap it into
