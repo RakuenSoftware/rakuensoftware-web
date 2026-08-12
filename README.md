@@ -21,8 +21,8 @@ npm start          # public site :3000 + private analytics :3001
 npm test           # analytics aggregation and access-control tests
 ```
 
-`dist/` is a static bundle. It is served in production by `server.mjs` on CT 121
-(`rakuen-web`, .253), behind the nginx-proxy container (CT 118) which terminates
+`dist/` is a static bundle. It is served in production by `server.mjs` on CT 107
+(`rakuen-web`, .253), behind the nginx-proxy container (CT 105) which terminates
 TLS for rakuensoftware.com. See `homelab/bootstrap/13-setup-rakuen-web.sh` in the
 `infrastructure` repo for how the host was provisioned.
 
@@ -59,10 +59,10 @@ host. It fast-forwards the checkout to `origin/main`, rebuilds, swaps `dist/` in
 atomically, restarts the server, and rolls back if the new bundle fails to serve:
 
 ```sh
-# on the host (CT 121):
+# on the host (CT 107):
 /opt/rakuen-web/scripts/deploy.sh
 # or from a box with Proxmox access:
-ssh root@.253 'pct exec 121 -- /opt/rakuen-web/scripts/deploy.sh'
+ssh root@192.168.1.253 'pct exec 107 -- /opt/rakuen-web/scripts/deploy.sh'
 ```
 
 ## Content
