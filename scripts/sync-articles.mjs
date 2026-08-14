@@ -51,7 +51,6 @@ const PUBLISHED = [
   'local-llm-fact-extraction-head-to-head',
   'speculative-decoding-was-free',
   'one-call-one-turn',
-  'synthesis-model-selection',
 ];
 
 function git(args, cwd) {
