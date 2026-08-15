@@ -51,7 +51,7 @@ const PUBLISHED = [
   'local-llm-fact-extraction-head-to-head',
   'speculative-decoding-was-free',
   'one-call-one-turn',
-  'synthesis-model-selection',
+  'synthesis-model-selection', // presentation completed; redeploy approved 2026-08-15
 ];
 
 function git(args, cwd) {
