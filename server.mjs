@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { readFile, stat } from 'node:fs/promises';
+import { readdir, readFile, stat } from 'node:fs/promises';
 import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { addressInCidr, buildSummary, createEventStore, normalizeEvent } from './lib/analytics.mjs';
@@ -15,6 +15,53 @@ const siteHost = process.env.SITE_HOST ?? 'rakuensoftware.com';
 const retentionDays = Number(process.env.ANALYTICS_RETENTION_DAYS ?? 400);
 const store = createEventStore(dataFile, retentionDays);
 const rateLimit = { startedAt: Date.now(), total: 0, visitors: new Map() };
+const postsDir = resolve(root, 'src/content/posts');
+
+/* Which article slugs exist, so a retired one can answer 404 instead of 200.
+ *
+ * The site is a single-page app and the handler below falls back to index.html
+ * for every path it cannot match on disk, with a 200. React then renders the
+ * NotFound route, so a human sees the right page and a crawler is told the page
+ * is fine. Eleven articles were briefly live and then retired; without this they
+ * stay indexed, because nothing ever told anyone they had gone.
+ *
+ * Read from src/content/posts rather than a build manifest because
+ * sync-articles.mjs already writes exactly the published set there, and a second
+ * list is a second thing to drift.
+ *
+ * Cached, and refreshed when the directory's mtime moves, so a deploy is picked
+ * up without a restart while a request does not pay for a readdir.
+ */
+const publishedSlugs = { at: 0, mtimeMs: -1, slugs: null };
+
+async function knownArticleSlugs() {
+  try {
+    const { mtimeMs } = await stat(postsDir);
+    if (publishedSlugs.slugs && mtimeMs === publishedSlugs.mtimeMs) return publishedSlugs.slugs;
+    const names = await readdir(postsDir);
+    publishedSlugs.slugs = new Set(
+      names.filter((n) => n.endsWith('.md')).map((n) => n.slice(0, -3)),
+    );
+    publishedSlugs.mtimeMs = mtimeMs;
+    return publishedSlugs.slugs;
+  } catch {
+    /* Fail OPEN. If the directory cannot be read the answer is "unknown", and
+     * serving a real article as 404 is a worse failure than leaving a retired
+     * one at 200. */
+    return null;
+  }
+}
+
+/* Only /blog/<slug> is decided here. Product pages come from a TypeScript module
+ * this process does not parse, and every other path is either a real route or
+ * already rare enough not to be worth guessing about. */
+async function isRetiredArticle(pathname) {
+  const m = /^\/blog\/([^/]+)\/?$/.exec(pathname);
+  if (!m) return false;
+  const slugs = await knownArticleSlugs();
+  if (!slugs) return false;
+  return !slugs.has(decodeURIComponent(m[1]));
+}
 
 const types = {
   '.css': 'text/css; charset=utf-8',
@@ -95,12 +142,19 @@ export async function servePublic(req, res) {
   } catch {
     file = '';
   }
-  if (!file) file = resolve(distDir, 'index.html');
+  let status = 200;
+  if (!file) {
+    file = resolve(distDir, 'index.html');
+    /* The app renders NotFound for this path either way. Sending 404 with the
+     * same shell means a reader sees the page and a crawler is told the article
+     * is gone, which a 200 never says. */
+    if (await isRetiredArticle(requested)) status = 404;
+  }
 
   try {
     const body = await readFile(file);
     const immutable = file.includes(`${sep}assets${sep}`) && /-[\w-]{8,}\./.test(file);
-    send(res, 200, req.method === 'HEAD' ? '' : body, {
+    send(res, status, req.method === 'HEAD' ? '' : body, {
       'content-type': types[extname(file)] ?? 'application/octet-stream',
       'cache-control': immutable ? 'public, max-age=31536000, immutable' : 'no-cache',
     });
