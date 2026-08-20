@@ -21,10 +21,16 @@ npm start          # public site :3000 + private analytics :3001
 npm test           # analytics aggregation and access-control tests
 ```
 
-`dist/` is a static bundle. It is served in production by `server.mjs` on CT 107
-(`rakuen-web`, .253), behind the nginx-proxy container (CT 105) which terminates
-TLS for rakuensoftware.com. See `homelab/bootstrap/13-setup-rakuen-web.sh` in the
-`infrastructure` repo for how the host was provisioned.
+`dist/` is a static bundle. It is served in production by `server.mjs` on the
+VPS that rakuensoftware.com resolves to — a Debian 13 box with the repo checked
+out at `/opt/rakuen-web`, running as `rakuen-web.service`. nginx on that same
+host terminates TLS and proxies to `:3000`.
+
+This used to run on an LXC container in the homelab, and this file described that
+for a while after it stopped being true — CT 107 behind an nginx-proxy container,
+reached with `pct exec` through the Proxmox host. None of that applies. The
+`infrastructure` repo's `homelab/bootstrap/13-setup-rakuen-web.sh` describes the
+old container and is not what serves the site.
 
 Because it is a single-page app, the host **must** rewrite unknown paths to
 `index.html`. The production server does this itself; without that fallback,
@@ -49,6 +55,14 @@ unit. The dashboard shows
 unique visitors, page views, visits, bounce rate, traffic trends, acquisition
 sources, top pages, and device mix for 7, 30, or 90 days.
 
+That CIDR came from the homelab and moved to the VPS unchanged, where no client
+can have a `192.168.x` source address. **The dashboard currently rejects
+everyone**, which is why nobody has looked at it. Collection is unaffected —
+pageviews are still being written. Reaching it again means deciding how it should
+be reached (an ssh tunnel with a loopback exception, or a real login) rather than
+widening the CIDR, which on a public address would publish the whole dataset.
+Port 3001 is firewalled off externally, so nothing is exposed in the meantime.
+
 During `vite` development, tracking is disabled by default. Set
 `VITE_ANALYTICS_ENABLED=true` only when intentionally exercising the collector.
 
@@ -60,11 +74,14 @@ swaps `dist/` in atomically, restarts the server, and rolls back if the new
 bundle fails to serve:
 
 ```sh
-# on the host (CT 107):
+# on the VPS:
 /opt/rakuen-web/scripts/deploy.sh
-# or from a box with Proxmox access:
-ssh root@192.168.1.253 'pct exec 107 -- /opt/rakuen-web/scripts/deploy.sh'
+# or over ssh, as root on that host:
+ssh root@<vps> '/opt/rakuen-web/scripts/deploy.sh'
 ```
+
+It prints `Live: <bundle> (commit <sha>)`. That sha is the confirmation; a merge
+on its own moves nothing.
 
 **Articles do not need any of that.** They publish themselves; see below.
 
