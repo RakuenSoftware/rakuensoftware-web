@@ -54,9 +54,10 @@ During `vite` development, tracking is disabled by default. Set
 
 ## Deploy
 
-There is no CI. Publishing is: merge to `main`, then run the deploy script on the
-host. It fast-forwards the checkout to `origin/main`, rebuilds, swaps `dist/` in
-atomically, restarts the server, and rolls back if the new bundle fails to serve:
+There is no CI. Deploying **code** is: merge to `main`, then run the deploy
+script on the host. It fast-forwards the checkout to `origin/main`, rebuilds,
+swaps `dist/` in atomically, restarts the server, and rolls back if the new
+bundle fails to serve:
 
 ```sh
 # on the host (CT 107):
@@ -64,6 +65,8 @@ atomically, restarts the server, and rolls back if the new bundle fails to serve
 # or from a box with Proxmox access:
 ssh root@192.168.1.253 'pct exec 107 -- /opt/rakuen-web/scripts/deploy.sh'
 ```
+
+**Articles do not need any of that.** They publish themselves; see below.
 
 ## Content
 
@@ -77,7 +80,19 @@ what a design document once planned.
 
 ### Blog
 
-Posts are markdown files in `src/content/blog/`. The filename becomes the slug.
+**Posts are not in this repository.** They live in
+[rakuen-blog](https://github.com/RakuenSoftware/rakuen-blog), which owns each
+article and the evidence behind it. `scripts/sync-articles.mjs` pulls the live
+ones into `src/content/posts/` before every build. That directory is generated
+and gitignored: editing it changes nothing, because the next build overwrites it.
+
+`articles/PUBLISHED` in rakuen-blog is the list of live articles, one slug per
+line, and a slug is both the article's directory there and its URL here. **To
+publish, add a line to that file and merge it.** To change a post, change it
+there. Either way `scripts/autopublish.sh` notices the branch move within three
+minutes and rebuilds the site — no commit here, no deploy.
+
+Frontmatter is read from the article as it stands in rakuen-blog:
 
 ```markdown
 ---
@@ -94,6 +109,21 @@ Body markdown here.
 `title` and a `YYYY-MM-DD` `date` are required — `npm run build` fails if either
 is missing, so a broken post never reaches the site. `excerpt` defaults to the
 first paragraph when omitted.
+
+Because nothing here reviews an article before it goes live, the sync is where
+the mistakes get caught. It refuses to build an empty blog, refuses a manifest
+line that is not a slug, refuses when an article it is told to publish cannot be
+found (a rename, which would retire a live URL), refuses when a previously
+published article has been dropped, and refuses to put more than three articles
+live at once. The last two are overridable with `ALLOW_UNPUBLISH=1` and
+`ALLOW_BULK_PUBLISH=1`; the errors say so. A refused sync writes nothing, so it
+keeps failing the same way until someone acts rather than passing on the retry.
+
+To build against an unmerged branch without pushing:
+
+```sh
+BLOG_LOCAL=../rakuen-blog npm run sync
+```
 
 ## Updating smoothgui
 

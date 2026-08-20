@@ -8,10 +8,12 @@
 #     ExecStart=/usr/bin/node /opt/rakuen-web/server.mjs
 #
 # The nginx-proxy container (CT 105) terminates TLS for rakuensoftware.com and
-# forwards to :3000. There is no CI; publishing is: land the article on
-# rakuen-blog main, add its slug to PUBLISHED in scripts/sync-articles.mjs, then
-# run this. Landing on rakuen-blog alone does not publish anything, which is the
-# point: the site holds the decision about what goes live.
+# forwards to :3000. There is no CI.
+#
+# This deploys CODE. Articles do not need it: publishing is a line in
+# rakuen-blog's articles/PUBLISHED, and the autopublish timer beside this script
+# picks that up within a few minutes and runs the article path below on its own.
+# Reach for this when the site's own source has changed.
 #
 # What it does: fast-forward the checkout to origin/main, install deps only if
 # the lockfile moved, pull the articles, build into a scratch dir, swap it into
