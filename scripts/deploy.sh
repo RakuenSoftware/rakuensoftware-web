@@ -2,13 +2,17 @@
 #
 # Deploy rakuensoftware.com.
 #
-# Runs on the rakuen-web host (Proxmox CT 107 on 192.168.1.253), where this repo is
-# checked out at /opt/rakuen-web and served by the rakuen-web.service unit:
+# Runs on the VPS that rakuensoftware.com resolves to, where this repo is checked
+# out at /opt/rakuen-web and served by the rakuen-web.service unit:
 #
 #     ExecStart=/usr/bin/node /opt/rakuen-web/server.mjs
 #
-# The nginx-proxy container (CT 105) terminates TLS for rakuensoftware.com and
-# forwards to :3000. There is no CI.
+# nginx on that same host terminates TLS and forwards to :3000. There is no CI.
+#
+# This header used to describe a Proxmox container in the homelab, reached with
+# `pct exec 107` through the hypervisor. The site moved and the comment did not,
+# so it sent people to a container that does not exist. Nothing below ever
+# depended on it: every command here is local to whatever host it runs on.
 #
 # This deploys CODE. Articles do not need it: publishing is a line in
 # rakuen-blog's articles/PUBLISHED, and the autopublish timer beside this script
@@ -30,8 +34,8 @@
 # current articles again. If you need an exact past state, check out the article
 # revision you want in a local clone and build with BLOG_LOCAL pointed at it.
 #
-# Usage (from the host):   /opt/rakuen-web/scripts/deploy.sh
-# Usage (from a jump box): ssh root@192.168.1.253 'pct exec 107 -- /opt/rakuen-web/scripts/deploy.sh'
+# Usage (on the VPS):  /opt/rakuen-web/scripts/deploy.sh
+# Usage (over ssh):    ssh root@<vps> '/opt/rakuen-web/scripts/deploy.sh'
 
 set -euo pipefail
 
