@@ -3,7 +3,7 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { addressInCidr, buildSummary, createEventStore, normalizeEvent } from './lib/analytics.mjs';
-import { recordSignup, renderMail, sendMail, validateSignup } from './lib/signup.mjs';
+import { recordSignup, renderMail, sendMail, sendMailSmtp, validateSignup } from './lib/signup.mjs';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const distDir = resolve(root, 'dist');
@@ -27,6 +27,14 @@ const signupFile = resolve(process.env.SIGNUP_DATA_DIR ?? resolve(root, 'data'),
 const signupTo = process.env.SIGNUP_TO ?? '';
 const signupFrom = process.env.SIGNUP_FROM ?? `no-reply@${siteHost}`;
 const signupRate = { startedAt: Date.now(), byAddress: new Map() };
+/* SMTP by default. This service runs with NoNewPrivileges, which strips setuid
+ * from exim's sendmail, so a subprocess cannot write the spool and fails with a
+ * permission error that a shell running the same command never sees. Talking to
+ * the local MTA over TCP needs no privileges and spawns nothing. Set
+ * SIGNUP_TRANSPORT=sendmail for a host with no listening MTA. */
+const signupTransport = process.env.SIGNUP_TRANSPORT ?? 'smtp';
+const signupSmtpHost = process.env.SIGNUP_SMTP_HOST ?? '127.0.0.1';
+const signupSmtpPort = Number(process.env.SIGNUP_SMTP_PORT ?? 25);
 
 /* Which article slugs exist, so a retired one can answer 404 instead of 200.
  *
@@ -204,7 +212,9 @@ async function signup(req, res) {
     await recordSignup(signupFile, record);
   } catch (err) {
     console.error('signup: could not record', err);
-    return send(res, 500, JSON.stringify({ error: `Could not record that. Please email ${signupTo || 'us'}.` }), {
+    /* Deliberately does NOT name signupTo. That is a real mailbox, and echoing
+     * it in a public error hands it to anyone who can make the write fail. */
+    return send(res, 500, JSON.stringify({ error: 'Could not record that. Please try again shortly.' }), {
       'content-type': 'application/json',
     });
   }
@@ -212,15 +222,25 @@ async function signup(req, res) {
   /* The record is on disk, so a send failure is logged and the visitor is still
    * told yes: it is our problem to chase, not theirs to retry. */
   if (signupTo !== '') {
+    const message = renderMail({
+      to: signupTo,
+      from: signupFrom,
+      signup: checked.signup,
+      at,
+      remoteIp,
+      userAgent: record.userAgent,
+    });
     try {
-      await sendMail(renderMail({
-        to: signupTo,
-        from: signupFrom,
-        signup: checked.signup,
-        at,
-        remoteIp,
-        userAgent: record.userAgent,
-      }));
+      if (signupTransport === 'sendmail') {
+        await sendMail(message);
+      } else {
+        await sendMailSmtp(message, {
+          host: signupSmtpHost,
+          port: signupSmtpPort,
+          from: signupFrom,
+          to: signupTo,
+        });
+      }
     } catch (err) {
       console.error('signup: recorded but mail failed', err);
     }
