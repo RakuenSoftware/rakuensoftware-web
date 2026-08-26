@@ -150,6 +150,124 @@ test('the message actually reaches the transport, verbatim', async () => {
 test('sendMail gives up rather than hanging on a transport that never exits', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'signup-'));
   const stub = join(dir, 'hangs');
-  await writeFile(stub, '#!/bin/sh\nsleep 30\n', { mode: 0o755 });
+  await writeFile(stub, '#!/bin/sh\nexec sleep 30\n', { mode: 0o755 });
   await assert.rejects(() => sendMail('x', { bin: stub, timeoutMs: 100 }), /timed out/);
+});
+
+/* SMTP is the transport the deployment actually uses: the service runs with
+ * NoNewPrivileges, which strips setuid from exim's sendmail, so a subprocess
+ * cannot write the spool. These drive a stub server rather than a live MTA. */
+import { createServer } from 'node:net';
+import { sendMailSmtp } from '../lib/signup.mjs';
+
+/** A minimal SMTP server that records what it was told. `replies` overrides the
+ *  response to a given command verb, so a refusal can be simulated. */
+function smtpStub(replies = {}) {
+  const received = { commands: [], body: '' };
+  const sockets = new Set();
+  let inData = false;
+  const server = createServer((socket) => {
+    /* Tracked so close() can destroy them. server.close() only stops accepting
+     * and waits for open connections, which left the event loop alive and made
+     * the whole test FILE time out while every subtest passed. */
+    sockets.add(socket);
+    socket.on('close', () => sockets.delete(socket));
+    socket.setEncoding('utf8');
+    socket.write('220 stub ESMTP\r\n');
+    let buf = '';
+    socket.on('data', (chunk) => {
+      buf += chunk;
+      let i;
+      while ((i = buf.indexOf('\r\n')) >= 0) {
+        const line = buf.slice(0, i);
+        buf = buf.slice(i + 2);
+        if (inData) {
+          if (line === '.') {
+            inData = false;
+            socket.write('250 queued\r\n');
+          } else {
+            received.body += `${line}\r\n`;
+          }
+          continue;
+        }
+        received.commands.push(line);
+        const verb = line.split(/[ :]/)[0].toUpperCase();
+        if (replies[verb] != null) {
+          socket.write(`${replies[verb]}\r\n`);
+          continue;
+        }
+        if (verb === 'DATA') {
+          inData = true;
+          socket.write('354 go ahead\r\n');
+        } else if (verb === 'QUIT') {
+          socket.write('221 bye\r\n');
+          socket.end();
+        } else {
+          socket.write('250 ok\r\n');
+        }
+      }
+    });
+  });
+  const close = () => {
+    for (const s of sockets) s.destroy();
+    server.close();
+  };
+  return { server, received, close };
+}
+
+function listen(server) {
+  return new Promise((res) => server.listen(0, '127.0.0.1', () => res(server.address().port)));
+}
+
+test('smtp delivers the message verbatim', async () => {
+  const { server, received, close } = smtpStub();
+  const port = await listen(server);
+  const message = renderMail({
+    to: 'ops@example.com',
+    from: 'no-reply@example.com',
+    signup: { email: 'jo@example.com', name: 'Jo', note: 'a repo' },
+    at: '2026-08-26T12:00:00Z',
+  });
+  await sendMailSmtp(message, { port, from: 'no-reply@example.com', to: 'ops@example.com' });
+  close();
+
+  assert.ok(received.commands.some((c) => c.startsWith('MAIL FROM:<no-reply@example.com>')));
+  assert.ok(received.commands.some((c) => c.startsWith('RCPT TO:<ops@example.com>')));
+  assert.ok(received.body.includes('Subject: aimee cloud signup: jo@example.com'));
+  assert.ok(received.body.includes('a repo'));
+});
+
+// A body line that is a single dot ends the DATA phase. Without stuffing, the
+// message is truncated there and its tail is read as SMTP commands.
+test('smtp escapes a leading dot so the message cannot be truncated', async () => {
+  const { server, received, close } = smtpStub();
+  const port = await listen(server);
+  await sendMailSmtp('Subject: t\r\n\r\nbefore\r\n.\r\nafter\r\n', {
+    port,
+    from: 'a@b.com',
+    to: 'c@d.com',
+  });
+  close();
+  assert.ok(received.body.includes('before'), 'text before the dot line is missing');
+  assert.ok(received.body.includes('after'), 'the message was truncated at the dot line');
+});
+
+test('smtp reports the server\'s own refusal', async () => {
+  const { server, close } = smtpStub({ RCPT: '550 no such mailbox' });
+  const port = await listen(server);
+  await assert.rejects(
+    () => sendMailSmtp('x\r\n', { port, from: 'a@b.com', to: 'nobody@example.com' }),
+    /550 no such mailbox/,
+  );
+  close();
+});
+
+test('smtp fails rather than hanging when nothing is listening', async () => {
+  await assert.rejects(
+    () => sendMailSmtp('x\r\n', { port: 1, from: 'a@b.com', to: 'c@d.com', timeoutMs: 2000 }),
+  );
+});
+
+test('smtp requires an envelope', async () => {
+  await assert.rejects(() => sendMailSmtp('x', { port: 25 }), /from and to are required/);
 });
