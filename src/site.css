@@ -10,56 +10,6 @@ body {
   scroll-margin-top: 72px;
 }
 
-/* Dark theme.
- *
- * smoothgui's public components are driven entirely by its --sg-* tokens, so
- * dark mode is a re-point of those tokens rather than a parallel stylesheet.
- * The attribute is set before first paint by the script in index.html and kept
- * current by ThemeToggle; it is always present, so there is no bare
- * prefers-color-scheme block here. */
-:root[data-theme='dark'] {
-  color-scheme: dark;
-
-  --sg-text: #e8e8f0;
-  --sg-text-muted: #cfcfdd;
-  --sg-text-secondary: #a9a9c0;
-  --sg-text-faint: #9292a8;
-  --sg-text-hint: #8b8ba1;
-  --sg-text-pale: #7e7e95;
-
-  --sg-bg: #14142a;
-  --sg-surface: #1b1b33;
-  --sg-surface-alt: #23233f;
-  --sg-surface-hover: #26264a;
-  --sg-surface-sunken: #16162e;
-
-  --sg-border: #33335c;
-  --sg-border-light: #2b2b4e;
-  --sg-border-medium: #3c3c68;
-  --sg-border-subtle: #23233f;
-
-  /* Prose links: the light-mode blues are too dark to read on these surfaces,
-   * and hover has to brighten rather than darken. */
-  --sg-info: #64b5f6;
-  --sg-info-dark: #90caf9;
-
-  /* Header, footer, hero, CTA and code blocks. Pushed below the page surface so
-   * the bands stay distinct once the page itself is dark. */
-  --sg-dark-surface: #0e0e20;
-  --sg-dark-surface-alt: #17172f;
-  --sg-dark-border: #2b2b4e;
-}
-
-/* smoothgui's Badge renders its palette as inline styles, so tag chips keep
- * their light-mode grey on dark sections unless overridden here. Buttons are
- * inline-styled too but need no override: every one on this site sits on a
- * dark Hero or CallToAction band in both themes. */
-:root[data-theme='dark'] .sg-article__tags > span,
-:root[data-theme='dark'] .site-post-tags > span {
-  background: var(--sg-surface-alt) !important;
-  color: var(--sg-text-secondary) !important;
-}
-
 .site-theme-toggle {
   background: transparent;
   border: 1px solid var(--sg-dark-border);
