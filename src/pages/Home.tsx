@@ -1,101 +1,175 @@
-import { Button, CallToAction, FeatureCard, FeatureGrid, Hero, Section } from '@rakuensoftware/smoothgui';
+import { Button, CallToAction, Hero, Section } from '@rakuensoftware/smoothgui';
 import { PRODUCTS } from '../content/products';
 import { POSTS, formatDate } from '../lib/posts';
-import { ArticleCard } from '@rakuensoftware/smoothgui';
 import RouterLink from '../components/RouterLink';
 import Meta from '../components/Meta';
+
+const FEATURED_SLUGS = new Set(['aimee', 'smoothnas', 'smoothrouter']);
+const featuredProducts = PRODUCTS.filter((product) => FEATURED_SLUGS.has(product.slug));
+const foundationProducts = PRODUCTS.filter((product) => !FEATURED_SLUGS.has(product.slug));
 
 export default function Home() {
   const recent = POSTS.slice(0, 3);
 
   return (
-    <>
+    <div className="home-page">
       <Meta
         title="Rakuen Software — Linux storage, routing and AI tooling"
         description="SmoothNAS, SmoothFS, SmoothRouter, nonraid, aimee and the Smooth* platform. Linux appliances built on mdadm, ZFS, nftables and dnsmasq, managed from a browser."
       />
 
       <Hero
-        eyebrow="Rakuen Software"
-        title="Storage, routing and AI tooling built on real Linux"
-        subtitle="Our appliances drive mdadm, ZFS, nftables and dnsmasq rather than replacing them. Manage everything from a browser, and keep every tool you already know when you SSH in."
+        eyebrow="Independent systems software"
+        title={<>Linux infrastructure.<br /><span className="home-hero__accent">Without the black box.</span></>}
+        subtitle="Storage, routing and AI tooling built on the Linux stack you already know. Operate it from a browser. Inspect it from a shell. Keep control of the machine underneath."
         actions={
           <>
-            <a href="#products"><Button variant="primary">Explore the products</Button></a>
+            <a href="#products"><Button variant="primary">Explore the portfolio</Button></a>
             <a href="https://github.com/RakuenSoftware" target="_blank" rel="noreferrer">
-              <Button variant="default">View on GitHub</Button>
+              <Button variant="ghost">View the source</Button>
             </a>
           </>
         }
+        media={
+          <div className="home-stack" role="img" aria-label="The shared Rakuen product stack">
+            <div className="home-stack__header">
+              <span className="home-stack__mark">R</span>
+              <span>Rakuen systems map</span>
+              <span className="home-stack__state">open source</span>
+            </div>
+            <div className="home-stack__layer">
+              <span className="home-stack__label">Products</span>
+              <div className="home-stack__items">
+                <strong>SmoothNAS</strong><strong>SmoothRouter</strong><strong>aimee</strong>
+              </div>
+            </div>
+            <div className="home-stack__layer">
+              <span className="home-stack__label">Shared</span>
+              <div className="home-stack__items">
+                <strong>SmoothGUI</strong><strong>SmoothISO</strong><strong>SmoothKernel</strong>
+              </div>
+            </div>
+            <div className="home-stack__layer home-stack__layer--base">
+              <span className="home-stack__label">Linux</span>
+              <div className="home-stack__items">
+                <span>mdadm</span><span>ZFS</span><span>nftables</span><span>dnsmasq</span>
+              </div>
+            </div>
+          </div>
+        }
       />
 
-      <Section
-        id="products"
-        eyebrow="Products"
-        title="What we build"
-        description="Seven products. Each one works on its own, and they share a kernel, an installer and a component library."
-        centered
-      >
-        <FeatureGrid columns={3}>
-          {PRODUCTS.map((product) => (
-            <FeatureCard
-              key={product.slug}
-              title={product.name}
-              href={`/products/${product.slug}`}
-              linkComponent={RouterLink}
-            >
-              {product.tagline}
-            </FeatureCard>
-          ))}
-        </FeatureGrid>
-      </Section>
+      <section className="home-principles" aria-label="What Rakuen Software builds for">
+        <div className="home-principles__inner">
+          <p><strong>Linux-native</strong><span>No private replacement stack.</span></p>
+          <p><strong>Inspectable</strong><span>The browser and shell tell the same story.</span></p>
+          <p><strong>Ownable</strong><span>Your hardware, your data, your way out.</span></p>
+        </div>
+      </section>
 
-      <Section tone="muted" title="Shared foundations" centered>
-        <FeatureGrid columns={3}>
-          <FeatureCard icon="🐧" title="One kernel">
-            SmoothKernel builds a single kernel line into Debian packages. Every flavour installs it, so driver coverage and firmware baselines stay identical across products.
-          </FeatureCard>
-          <FeatureCard icon="💿" title="One installer">
-            SmoothISO turns any product into a bootable Debian installer. Products supply hooks, so nobody maintains a private branch of the builder.
-          </FeatureCard>
-          <FeatureCard icon="🎨" title="One interface">
-            SmoothGUI is the component library behind every console, every installer and this website. One fix lands everywhere.
-          </FeatureCard>
-        </FeatureGrid>
-      </Section>
+      <div className="home-portfolio">
+        <Section
+          id="products"
+          eyebrow="Portfolio"
+          title="Systems you can understand under failure"
+          description="The products solve different problems, but share one rule: the interface must expose the system, not hide it."
+        >
+          <div className="home-product-grid">
+            {featuredProducts.map((product, index) => (
+              <RouterLink
+                key={product.slug}
+                href={`/products/${product.slug}`}
+                className="home-product"
+              >
+                <span className="home-product__index">0{index + 1}</span>
+                {product.status != null && <span className="home-product__status">{product.status}</span>}
+                <h3>{product.name}</h3>
+                <p>{product.tagline}</p>
+                <span className="home-product__link">Product overview <span aria-hidden="true">↗</span></span>
+              </RouterLink>
+            ))}
+          </div>
+
+          <div className="home-foundations">
+            <div className="home-foundations__intro">
+              <p className="home-foundations__eyebrow">The foundation</p>
+              <h3>Built once. Shared all the way down.</h3>
+              <p>The filesystem, parity engine, interface, installer and kernel stay independent—and become infrastructure for everything above them.</p>
+            </div>
+            <div className="home-foundations__list">
+              {foundationProducts.map((product, index) => (
+                <RouterLink key={product.slug} href={`/products/${product.slug}`} className="home-foundation">
+                  <span className="home-foundation__index">0{index + 4}</span>
+                  <span className="home-foundation__name">{product.name}</span>
+                  <span className="home-foundation__tagline">{product.tagline}</span>
+                  <span className="home-foundation__arrow" aria-hidden="true">→</span>
+                </RouterLink>
+              ))}
+            </div>
+          </div>
+        </Section>
+      </div>
+
+      <div className="home-operating-model">
+        <Section eyebrow="Operating model" title="One stack. Clear boundaries.">
+          <div className="home-model-grid">
+            <article>
+              <span>01</span>
+              <h3>Standard underneath</h3>
+              <p>mdadm, ZFS, nftables, dnsmasq and Debian remain visible and usable. Recovery never depends on our UI being alive.</p>
+            </article>
+            <article>
+              <span>02</span>
+              <h3>Purpose-built above</h3>
+              <p>The browser handles orchestration, policy and the work that should not require memorising six command-line interfaces.</p>
+            </article>
+            <article>
+              <span>03</span>
+              <h3>Shared across products</h3>
+              <p>One kernel, installer and interface keep hardware support, installation and operations from drifting apart.</p>
+            </article>
+          </div>
+        </Section>
+      </div>
 
       {recent.length > 0 && (
-        <Section title="Latest posts" width="narrow">
-          {recent.map((post) => (
-            <ArticleCard
-              key={post.slug}
-              title={post.title}
-              href={`/blog/${post.slug}`}
-              excerpt={post.excerpt}
-              date={formatDate(post.date)}
-              dateTime={post.date}
-              author={post.author}
-              tags={post.tags}
-              linkComponent={RouterLink}
-            />
-          ))}
-        </Section>
+        <div className="home-writing">
+          <Section
+            eyebrow="Field notes"
+            title="Engineering, measured"
+            description="Release notes, design decisions and experiments—including the results that changed our minds."
+          >
+            <div className="home-writing__grid">
+              {recent.map((post, index) => (
+                <article key={post.slug} className={index === 0 ? 'home-post home-post--lead' : 'home-post'}>
+                  <p className="home-post__meta">
+                    <time dateTime={post.date}>{formatDate(post.date)}</time>
+                    {post.tags[0] != null && <span>{post.tags[0]}</span>}
+                  </p>
+                  <h3><RouterLink href={`/blog/${post.slug}`}>{post.title}</RouterLink></h3>
+                  <p>{post.excerpt}</p>
+                  <RouterLink href={`/blog/${post.slug}`} className="home-post__link">Read the article →</RouterLink>
+                </article>
+              ))}
+            </div>
+          </Section>
+        </div>
       )}
 
       <CallToAction
-        title="Run it on hardware you already own"
-        description="Every public product is on GitHub, licence and all. Clone it and see."
+        title="Built in public. Run on your hardware."
+        description="Read the source, open an issue, or tell us what you are building."
         actions={
           <>
             <a href="https://github.com/RakuenSoftware" target="_blank" rel="noreferrer">
-              <Button variant="primary">Browse the source</Button>
+              <Button variant="primary">Browse GitHub</Button>
             </a>
             <a href="https://discord.gg/FjGjvcgAqz" target="_blank" rel="noreferrer">
-              <Button variant="default">Join the Discord</Button>
+              <Button variant="ghost">Join the Discord</Button>
             </a>
           </>
         }
       />
-    </>
+    </div>
   );
 }

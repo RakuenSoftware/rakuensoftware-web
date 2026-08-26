@@ -41,7 +41,7 @@ export default function ProductPage() {
       <Section eyebrow={product.tagline} title="What it does">
         <FeatureGrid columns={3}>
           {product.features.map((feature) => (
-            <FeatureCard key={feature.title} icon={feature.icon} title={feature.title}>
+            <FeatureCard key={feature.title} title={feature.title}>
               {feature.body}
             </FeatureCard>
           ))}
