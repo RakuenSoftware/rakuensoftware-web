@@ -97,7 +97,7 @@ export default function AimeeCloud() {
             <Button variant="primary" onClick={() => setOpen(true)}>
               Start free
             </Button>
-            <Badge label="Free while in early access" variant="info" />
+            <Badge label="Free tier, permanently" variant="info" />
           </>
         }
       />
@@ -153,11 +153,11 @@ export default function AimeeCloud() {
         </Prose>
       </Section>
 
-      <Section eyebrow="Pricing" title="Free while it is in early access." width="narrow">
+      <Section eyebrow="Pricing" title="There is a free tier, and it is staying." width="narrow">
         <Prose>
           <p>
-            There is one plan and it costs nothing. We are onboarding by hand while the service is
-            young, so a code arrives by email rather than a card form.
+            Not a trial and not an introductory rate. A free tier is part of what this is, and what
+            you can do on it today you will still be able to do on it later.
           </p>
           <ul>
             <li>As many projects as you want to index.</li>
@@ -166,9 +166,13 @@ export default function AimeeCloud() {
             <li>Suspends when idle and wakes on your next request.</li>
           </ul>
           <p>
-            Paid plans will come, and they will be about the things that cost us money — the
-            curator's language-model passes, always-warm instances, and larger corpora. Nothing
-            you rely on today gets moved behind them.
+            Paid plans will arrive for the things that genuinely cost us money — the curator's
+            language-model passes, instances that stay warm, and corpora past a few gigabytes.
+            They add to the free tier rather than carving pieces out of it.
+          </p>
+          <p>
+            We are onboarding by hand while the service is young, so a setup code arrives by email
+            rather than through a card form. That part is temporary. The free tier is not.
           </p>
         </Prose>
       </Section>
