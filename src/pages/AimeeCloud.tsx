@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Badge,
   Button,
   CallToAction,
   CodeBlock,
@@ -93,12 +92,9 @@ export default function AimeeCloud() {
         title="Your agent forgets. The knowledge base doesn't."
         subtitle="A hosted aimee knowledge base: persistent typed memory, a cross-repo code graph, and hybrid retrieval over both. We run the Postgres and the vectors. Your agents keep running exactly where they are."
         actions={
-          <>
-            <Button variant="primary" onClick={() => setOpen(true)}>
-              Start free
-            </Button>
-            <Badge label="Free tier, permanently" variant="info" />
-          </>
+          <Button variant="primary" onClick={() => setOpen(true)}>
+            Start free
+          </Button>
         }
       />
 
