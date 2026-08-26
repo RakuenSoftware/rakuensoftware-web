@@ -6,6 +6,7 @@ import AimeeCloud from './pages/AimeeCloud';
 import BlogIndex from './pages/BlogIndex';
 import BlogPost from './pages/BlogPost';
 import NotFound from './pages/NotFound';
+import { isCloudHost } from '../lib/cloud-host.mjs';
 
 /**
  * aimee cloud has its own hostname but is the same app and the same build.
@@ -13,13 +14,17 @@ import NotFound from './pages/NotFound';
  * On aimee.rakuensoftware.com the index route is the cloud page rather than the
  * company home page; everywhere else it is Home and the cloud page lives at
  * /cloud. Deciding here rather than with a second build or an nginx rewrite
- * keeps one artifact to deploy and one place to change it — and /cloud stays a
+ * keeps one artifact to deploy and one place to change it. /cloud also stays a
  * working URL on every host, so a link to it never depends on which name the
  * reader arrived by.
+ *
+ * The predicate itself is in lib/cloud-host.mjs so it can be tested: a one-line
+ * routing decision that silently stops being true is exactly what nobody
+ * notices until someone reports the wrong page.
  */
 function onCloudHost(): boolean {
   if (typeof window === 'undefined') return false;
-  return window.location.hostname.startsWith('aimee.');
+  return isCloudHost(window.location.hostname);
 }
 
 export default function App() {

@@ -21,20 +21,20 @@ import Meta from '../components/Meta';
 const API = 'https://api.aimee.rakuensoftware.com';
 
 /** Signup posts here, on this host. It is a marketing-site concern and has
- *  nothing to do with a knowledge base — sending it to the API would put
+ *  nothing to do with a knowledge base. Sending it to the API would put
  *  unauthenticated public traffic on the machine holding customer corpora, and
  *  would need CORS and a preflight to do what a relative path does with
  *  neither. */
 const SIGNUP = '/api/signup';
 
-const CONNECT = `# 1 — tell aimee its knowledge base is remote
+const CONNECT = `# 1. tell aimee its knowledge base is remote
 aimee config set kb_mode remote
 aimee config set kb_client_url ${API}
 
-# 2 — paste the key from your welcome email
+# 2. paste the key from your welcome email
 aimee config set kb_client_bearer_token aik_…
 
-# 3 — index a repository and ask it something
+# 3. index a repository and ask it something
 cd ~/code/your-project
 aimee workspace add .
 aimee index scan .
@@ -71,7 +71,7 @@ export default function AimeeCloud() {
       setNote('');
       setStatus({
         kind: 'ok',
-        msg: body.message ?? "Thanks — we'll email you a setup code shortly.",
+        msg: body.message ?? "Thanks. We'll email you a setup code shortly.",
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'That did not go through.';
@@ -84,7 +84,7 @@ export default function AimeeCloud() {
   return (
     <>
       <Meta
-        title="aimee cloud — Rakuen Software"
+        title="aimee cloud | Rakuen Software"
         description="A hosted aimee knowledge base. We run the Postgres and the vectors; your agents keep running where they already are."
       />
 
@@ -97,7 +97,7 @@ export default function AimeeCloud() {
             <Button variant="primary" onClick={() => setOpen(true)}>
               Start free
             </Button>
-            <Badge label="Free while in early access" variant="info" />
+            <Badge label="Free tier, permanently" variant="info" />
           </>
         }
       />
@@ -119,15 +119,15 @@ export default function AimeeCloud() {
           </FeatureCard>
           <FeatureCard icon="🔑" title="Keys you control">
             Read-only keys for CI, expiring keys for contractors, and revocation that takes effect
-            on the next request — no restart, no propagation delay.
+            on the next request. No restart, no propagation delay.
           </FeatureCard>
           <FeatureCard icon="🧳" title="Leaving is a config change">
             Same schema, same software. Export it and point your aimee at a local knowledge base.
             Nothing to migrate, nothing to re-index.
           </FeatureCard>
-          <FeatureCard icon="🌱" title="Sleeps when you do">
-            An idle knowledge base suspends and wakes on your next request, which is what keeps the
-            free tier free.
+          <FeatureCard icon="💾" title="Backed up, and the restores are tested">
+            Nightly dumps, each one restored into a scratch database and checked table by table
+            before it is kept. A backup nobody has restored is a file, not a backup.
           </FeatureCard>
         </FeatureGrid>
       </Section>
@@ -153,22 +153,28 @@ export default function AimeeCloud() {
         </Prose>
       </Section>
 
-      <Section eyebrow="Pricing" title="Free while it is in early access." width="narrow">
+      <Section eyebrow="Pricing" title="There is a free tier, and it is staying." width="narrow">
         <Prose>
           <p>
-            There is one plan and it costs nothing. We are onboarding by hand while the service is
-            young, so a code arrives by email rather than a card form.
+            Not a trial and not an introductory rate. A free tier is part of what this is, and what
+            you can do on it today you will still be able to do on it later.
           </p>
           <ul>
             <li>As many projects as you want to index.</li>
             <li>Your own dedicated database, not a shared one.</li>
             <li>The full retrieval stack: lexical, dense and the code graph.</li>
-            <li>Suspends when idle and wakes on your next request.</li>
+            <li>
+              Idle knowledge bases suspend and start again on the next request, so the first call
+              after a quiet spell takes a few extra seconds.
+            </li>
           </ul>
           <p>
-            Paid plans will come, and they will be about the things that cost us money — the
-            curator's language-model passes, always-warm instances, and larger corpora. Nothing
-            you rely on today gets moved behind them.
+            Paid plans will offer more storage and more features. They add to the free plan
+            rather than carving pieces out of it, and the free plan is here to stay.
+          </p>
+          <p>
+            We are onboarding by hand while the service is young, so a setup code arrives by email
+            rather than through a card form. That part is temporary. The free tier is not.
           </p>
         </Prose>
       </Section>
@@ -178,7 +184,7 @@ export default function AimeeCloud() {
           <p>
             If you already run aimee this is a config change: the same client, the same commands, a
             knowledge base that happens to be elsewhere. If you don't, install the thin client
-            first — a single binary with no database.
+            first. It is a single binary with no database.
           </p>
         </Prose>
         <CodeBlock code={CONNECT} label="attach an existing aimee" />
