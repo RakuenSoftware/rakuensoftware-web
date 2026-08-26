@@ -15,10 +15,6 @@ import {
 import type { InlineStatusMessage } from '@rakuensoftware/smoothgui';
 import Meta from '../components/Meta';
 
-/** Where a customer's aimee connects, shown in the quickstart. The page itself
- *  never calls it: signup is handled by this site's own server, same-origin. */
-const API = 'https://api.aimee.rakuensoftware.com';
-
 /** Signup posts here, on this host. It is a marketing-site concern and has
  *  nothing to do with a knowledge base. Sending it to the API would put
  *  unauthenticated public traffic on the machine holding customer corpora, and
@@ -26,14 +22,27 @@ const API = 'https://api.aimee.rakuensoftware.com';
  *  neither. */
 const SIGNUP = '/api/signup';
 
-const CONNECT = `# 1. tell aimee its knowledge base is remote
-aimee config set kb_mode remote
-aimee config set kb_client_url ${API}
+const RUN_SERVER = `# aimee-server, with no local knowledge base: yours is hosted.
+git clone https://github.com/RakuenSoftware/aimee.git
+cd aimee
+docker compose -f compose.server-standalone.yaml up -d
 
-# 2. paste the key from your welcome email
-aimee config set kb_client_bearer_token aik_…
+# The first-boot login is printed once. Copy it before the log rotates.
+docker compose -f compose.server-standalone.yaml logs aimee-server | grep -A3 FIRST-BOOT`;
 
-# 3. index a repository and ask it something
+const INSTALL_CLIENT = `# Linux. Use aimee-linux-arm64 on ARM64, or aimee-macos-universal on a Mac.
+mkdir -p ~/.local/bin
+curl -fL https://github.com/RakuenSoftware/aimee/releases/latest/download/aimee-linux-x86_64 \\
+  -o ~/.local/bin/aimee
+chmod 755 ~/.local/bin/aimee
+export PATH="$PATH:$HOME/.local/bin"
+aimee version`;
+
+const ENROL = `# The wizard shows this command with your bearer already in it.
+aimee remote set https://your-server:8743 <bearer-from-the-wizard>
+aimee remote status
+
+# Then index a repository and ask it something.
 cd ~/code/your-project
 aimee workspace add .
 aimee index scan .
@@ -175,15 +184,58 @@ export default function AimeeCloud() {
         </Prose>
       </Section>
 
-      <Section eyebrow="Getting started" title="Point your existing aimee at it." width="narrow" tone="muted">
+      <Section eyebrow="Getting started" title="Four steps, and the code does most of one." width="narrow" tone="muted">
         <Prose>
           <p>
-            If you already run aimee this is a config change: the same client, the same commands, a
-            knowledge base that happens to be elsewhere. If you don't, install the thin client
-            first. It is a single binary with no database.
+            aimee runs on your machine and keeps your knowledge base here. So you install two things
+            — a server in Docker and a small client where you write code — and the setup code
+            connects them to your hosted knowledge base.
+          </p>
+          <h3>1. Run aimee-server</h3>
+          <p>
+            The standalone profile deploys no knowledge base and no Postgres, because yours is
+            already running.
           </p>
         </Prose>
-        <CodeBlock code={CONNECT} label="attach an existing aimee" />
+        <CodeBlock code={RUN_SERVER} label="on the machine that will run aimee" />
+
+        <Prose>
+          <h3>2. Open the setup wizard and paste your code</h3>
+          <p>
+            Go to <code>https://localhost:8443</code> and sign in with the first-boot login. At the
+            knowledge base step choose <strong>aimee cloud</strong> and paste the code from your
+            welcome email. That is the whole of the hard part: the code is exchanged for the address
+            and key of your knowledge base, and the deployment and database steps disappear because
+            there is nothing here to deploy.
+          </p>
+          <p>
+            The wizard then shows one <code>aimee remote set</code> command. Keep that page open for
+            step 4.
+          </p>
+
+          <h3>3. Install the client where you write code</h3>
+          <p>
+            A single binary with no database. It can be the same machine as the server or a
+            different one.
+          </p>
+        </Prose>
+        <CodeBlock code={INSTALL_CLIENT} label="on your workstation" />
+
+        <Prose>
+          <h3>4. Enrol the client and index something</h3>
+          <p>
+            Paste the command the wizard showed you. It provisions your bearer, a client
+            certificate, and the write grant that goes with them.
+          </p>
+        </Prose>
+        <CodeBlock code={ENROL} label="connect the client to your server" />
+
+        <Prose>
+          <p>
+            Already running aimee? Only step 2 applies: open the wizard, change the knowledge base to
+            aimee cloud, and paste the code.
+          </p>
+        </Prose>
       </Section>
 
       <CallToAction
