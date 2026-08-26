@@ -21,20 +21,20 @@ import Meta from '../components/Meta';
 const API = 'https://api.aimee.rakuensoftware.com';
 
 /** Signup posts here, on this host. It is a marketing-site concern and has
- *  nothing to do with a knowledge base — sending it to the API would put
+ *  nothing to do with a knowledge base. Sending it to the API would put
  *  unauthenticated public traffic on the machine holding customer corpora, and
  *  would need CORS and a preflight to do what a relative path does with
  *  neither. */
 const SIGNUP = '/api/signup';
 
-const CONNECT = `# 1 — tell aimee its knowledge base is remote
+const CONNECT = `# 1. tell aimee its knowledge base is remote
 aimee config set kb_mode remote
 aimee config set kb_client_url ${API}
 
-# 2 — paste the key from your welcome email
+# 2. paste the key from your welcome email
 aimee config set kb_client_bearer_token aik_…
 
-# 3 — index a repository and ask it something
+# 3. index a repository and ask it something
 cd ~/code/your-project
 aimee workspace add .
 aimee index scan .
@@ -71,7 +71,7 @@ export default function AimeeCloud() {
       setNote('');
       setStatus({
         kind: 'ok',
-        msg: body.message ?? "Thanks — we'll email you a setup code shortly.",
+        msg: body.message ?? "Thanks. We'll email you a setup code shortly.",
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'That did not go through.';
@@ -84,7 +84,7 @@ export default function AimeeCloud() {
   return (
     <>
       <Meta
-        title="aimee cloud — Rakuen Software"
+        title="aimee cloud | Rakuen Software"
         description="A hosted aimee knowledge base. We run the Postgres and the vectors; your agents keep running where they already are."
       />
 
@@ -119,7 +119,7 @@ export default function AimeeCloud() {
           </FeatureCard>
           <FeatureCard icon="🔑" title="Keys you control">
             Read-only keys for CI, expiring keys for contractors, and revocation that takes effect
-            on the next request — no restart, no propagation delay.
+            on the next request. No restart, no propagation delay.
           </FeatureCard>
           <FeatureCard icon="🧳" title="Leaving is a config change">
             Same schema, same software. Export it and point your aimee at a local knowledge base.
@@ -169,9 +169,8 @@ export default function AimeeCloud() {
             </li>
           </ul>
           <p>
-            Paid plans will arrive for the things that genuinely cost us money — the curator's
-            language-model passes, instances that stay warm, and corpora past a few gigabytes.
-            They add to the free tier rather than carving pieces out of it.
+            Paid plans will offer more storage and more features. They add to the free plan
+            rather than carving pieces out of it, and the free plan is here to stay.
           </p>
           <p>
             We are onboarding by hand while the service is young, so a setup code arrives by email
@@ -185,7 +184,7 @@ export default function AimeeCloud() {
           <p>
             If you already run aimee this is a config change: the same client, the same commands, a
             knowledge base that happens to be elsewhere. If you don't, install the thin client
-            first — a single binary with no database.
+            first. It is a single binary with no database.
           </p>
         </Prose>
         <CodeBlock code={CONNECT} label="attach an existing aimee" />

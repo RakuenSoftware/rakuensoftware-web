@@ -14,7 +14,7 @@ import { isCloudHost } from '../lib/cloud-host.mjs';
  * On aimee.rakuensoftware.com the index route is the cloud page rather than the
  * company home page; everywhere else it is Home and the cloud page lives at
  * /cloud. Deciding here rather than with a second build or an nginx rewrite
- * keeps one artifact to deploy and one place to change it — and /cloud stays a
+ * keeps one artifact to deploy and one place to change it. /cloud also stays a
  * working URL on every host, so a link to it never depends on which name the
  * reader arrived by.
  *

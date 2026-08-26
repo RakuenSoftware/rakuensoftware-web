@@ -21,7 +21,7 @@ const postsDir = resolve(root, 'src/content/posts');
 /* aimee cloud signup. Handled here rather than by the aimee cloud API: the form
  * is a marketing-site concern, and posting it to the API host would put
  * unauthenticated public traffic on the machine holding customer knowledge
- * bases — and need CORS and a preflight to do what this process does
+ * bases, and need CORS and a preflight to do what this process does
  * same-origin with neither. */
 const signupFile = resolve(process.env.SIGNUP_DATA_DIR ?? resolve(root, 'data'), 'signups.jsonl');
 const signupTo = process.env.SIGNUP_TO ?? '';
@@ -138,7 +138,7 @@ async function collect(req, res) {
  *
  * nginx proxies this app, so req.socket.remoteAddress is 127.0.0.1 for every
  * public request and rate limiting on it would be one shared bucket for the
- * whole internet. X-Forwarded-For carries the real client — but it is
+ * whole internet. X-Forwarded-For carries the real client, but it is
  * attacker-controlled unless a proxy we run rewrote it, so it is trusted ONLY
  * when the connection itself came from loopback. This process also listens on
  * 0.0.0.0, so a request arriving from anywhere else is not behind our nginx and
@@ -233,7 +233,7 @@ async function signup(req, res) {
   });
 }
 
-const SIGNUP_OK = "Thanks — we'll email you a setup code shortly.";
+const SIGNUP_OK = "Thanks. We'll email you a setup code shortly.";
 
 export async function servePublic(req, res) {
   const url = new URL(req.url ?? '/', 'http://localhost');
