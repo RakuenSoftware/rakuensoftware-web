@@ -125,9 +125,9 @@ export default function AimeeCloud() {
             Same schema, same software. Export it and point your aimee at a local knowledge base.
             Nothing to migrate, nothing to re-index.
           </FeatureCard>
-          <FeatureCard icon="🌱" title="Sleeps when you do">
-            An idle knowledge base suspends and wakes on your next request, which is what keeps the
-            free tier free.
+          <FeatureCard icon="💾" title="Backed up, and the restores are tested">
+            Nightly dumps, each one restored into a scratch database and checked table by table
+            before it is kept. A backup nobody has restored is a file, not a backup.
           </FeatureCard>
         </FeatureGrid>
       </Section>
@@ -163,7 +163,10 @@ export default function AimeeCloud() {
             <li>As many projects as you want to index.</li>
             <li>Your own dedicated database, not a shared one.</li>
             <li>The full retrieval stack: lexical, dense and the code graph.</li>
-            <li>Suspends when idle and wakes on your next request.</li>
+            <li>
+              Idle knowledge bases suspend and start again on the next request, so the first call
+              after a quiet spell takes a few extra seconds.
+            </li>
           </ul>
           <p>
             Paid plans will arrive for the things that genuinely cost us money — the curator's
