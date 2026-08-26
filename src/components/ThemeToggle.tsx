@@ -1,21 +1,9 @@
 import { useEffect, useState } from 'react';
-import { activeTheme, applyTheme, storeTheme, storedTheme, systemTheme } from '../lib/theme';
+import { activeTheme, applyTheme, storeTheme } from '../lib/theme';
 
-/**
- * Flips the site between light and dark. Until the visitor picks one, the site
- * follows the OS preference and keeps following it if that changes mid-visit.
- */
+/** Flips the site between its dark default and an explicitly selected light theme. */
 export default function ThemeToggle() {
   const [theme, setTheme] = useState(activeTheme);
-
-  useEffect(() => {
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const onChange = () => {
-      if (storedTheme() == null) setTheme(systemTheme());
-    };
-    media.addEventListener('change', onChange);
-    return () => media.removeEventListener('change', onChange);
-  }, []);
 
   useEffect(() => {
     applyTheme(theme);
