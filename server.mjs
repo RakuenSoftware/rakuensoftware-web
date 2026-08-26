@@ -3,6 +3,7 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { addressInCidr, buildSummary, createEventStore, normalizeEvent } from './lib/analytics.mjs';
+import { recordSignup, renderMail, sendMail, validateSignup } from './lib/signup.mjs';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const distDir = resolve(root, 'dist');
@@ -16,6 +17,16 @@ const retentionDays = Number(process.env.ANALYTICS_RETENTION_DAYS ?? 400);
 const store = createEventStore(dataFile, retentionDays);
 const rateLimit = { startedAt: Date.now(), total: 0, visitors: new Map() };
 const postsDir = resolve(root, 'src/content/posts');
+
+/* aimee cloud signup. Handled here rather than by the aimee cloud API: the form
+ * is a marketing-site concern, and posting it to the API host would put
+ * unauthenticated public traffic on the machine holding customer knowledge
+ * bases — and need CORS and a preflight to do what this process does
+ * same-origin with neither. */
+const signupFile = resolve(process.env.SIGNUP_DATA_DIR ?? resolve(root, 'data'), 'signups.jsonl');
+const signupTo = process.env.SIGNUP_TO ?? '';
+const signupFrom = process.env.SIGNUP_FROM ?? `no-reply@${siteHost}`;
+const signupRate = { startedAt: Date.now(), byAddress: new Map() };
 
 /* Which article slugs exist, so a retired one can answer 404 instead of 200.
  *
@@ -123,8 +134,110 @@ async function collect(req, res) {
   }
 }
 
+/* The address to attribute a request to.
+ *
+ * nginx proxies this app, so req.socket.remoteAddress is 127.0.0.1 for every
+ * public request and rate limiting on it would be one shared bucket for the
+ * whole internet. X-Forwarded-For carries the real client — but it is
+ * attacker-controlled unless a proxy we run rewrote it, so it is trusted ONLY
+ * when the connection itself came from loopback. This process also listens on
+ * 0.0.0.0, so a request arriving from anywhere else is not behind our nginx and
+ * its claim about who it is means nothing.
+ */
+function clientAddress(req) {
+  const socketAddress = req.socket.remoteAddress ?? '';
+  const fromLoopback =
+    socketAddress === '127.0.0.1' || socketAddress === '::1' || socketAddress === '::ffff:127.0.0.1';
+  if (!fromLoopback) return socketAddress;
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded !== 'string' || forwarded === '') return socketAddress;
+  /* Left-most is the original client; trustworthy because our own nginx
+   * appends rather than passing the client's value through. */
+  return forwarded.split(',')[0].trim() || socketAddress;
+}
+
+/* The one route on the public site that accepts input, so it is treated as
+ * hostile: an 8 KiB cap from readJson, a per-address hourly limit, a honeypot
+ * that reports success, and nothing the submitter typed is ever echoed back. */
+async function signup(req, res) {
+  const now = Date.now();
+  if (now - signupRate.startedAt >= 3_600_000) {
+    signupRate.startedAt = now;
+    signupRate.byAddress.clear();
+  }
+  const remoteIp = clientAddress(req);
+  const seen = signupRate.byAddress.get(remoteIp) ?? 0;
+  if (seen >= 5) {
+    return send(res, 429, JSON.stringify({ error: 'Too many attempts. Try again later.' }), {
+      'content-type': 'application/json',
+      'retry-after': '3600',
+    });
+  }
+  signupRate.byAddress.set(remoteIp, seen + 1);
+
+  let input;
+  try {
+    input = await readJson(req);
+  } catch {
+    return send(res, 400, JSON.stringify({ error: 'Could not read that form.' }), {
+      'content-type': 'application/json',
+    });
+  }
+
+  const checked = validateSignup(input);
+  if (checked.honeypot === true) {
+    /* Report success. A bot told it was caught tries again differently. */
+    console.log(JSON.stringify({ at: new Date().toISOString(), signup: 'honeypot', remoteIp }));
+    return send(res, 200, JSON.stringify({ ok: true, message: SIGNUP_OK }), {
+      'content-type': 'application/json',
+    });
+  }
+  if (checked.error != null) {
+    return send(res, 400, JSON.stringify({ error: checked.error }), {
+      'content-type': 'application/json',
+    });
+  }
+
+  const at = new Date().toISOString();
+  const record = { ...checked.signup, remoteIp, userAgent: req.headers['user-agent'] ?? '', at };
+  try {
+    await recordSignup(signupFile, record);
+  } catch (err) {
+    console.error('signup: could not record', err);
+    return send(res, 500, JSON.stringify({ error: `Could not record that. Please email ${signupTo || 'us'}.` }), {
+      'content-type': 'application/json',
+    });
+  }
+
+  /* The record is on disk, so a send failure is logged and the visitor is still
+   * told yes: it is our problem to chase, not theirs to retry. */
+  if (signupTo !== '') {
+    try {
+      await sendMail(renderMail({
+        to: signupTo,
+        from: signupFrom,
+        signup: checked.signup,
+        at,
+        remoteIp,
+        userAgent: record.userAgent,
+      }));
+    } catch (err) {
+      console.error('signup: recorded but mail failed', err);
+    }
+  } else {
+    console.warn('signup: SIGNUP_TO is unset, so nothing was emailed');
+  }
+  console.log(JSON.stringify({ at, signup: 'recorded', email: checked.signup.email, remoteIp }));
+  return send(res, 200, JSON.stringify({ ok: true, message: SIGNUP_OK }), {
+    'content-type': 'application/json',
+  });
+}
+
+const SIGNUP_OK = "Thanks — we'll email you a setup code shortly.";
+
 export async function servePublic(req, res) {
   const url = new URL(req.url ?? '/', 'http://localhost');
+  if (req.method === 'POST' && url.pathname === '/api/signup') return signup(req, res);
   if (req.method === 'POST' && url.pathname === '/__analytics/pageview') return collect(req, res);
   if ((req.method === 'GET' || req.method === 'HEAD') && url.pathname === '/__analytics/health') return send(res, 204);
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'Method not allowed', { allow: 'GET, HEAD, POST' });

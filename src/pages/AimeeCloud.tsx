@@ -16,9 +16,16 @@ import {
 import type { InlineStatusMessage } from '@rakuensoftware/smoothgui';
 import Meta from '../components/Meta';
 
-/** The API origin. The page talks to nothing else, and the site's CSP names
- *  this one connect-src. */
+/** Where a customer's aimee connects, shown in the quickstart. The page itself
+ *  never calls it: signup is handled by this site's own server, same-origin. */
 const API = 'https://api.aimee.rakuensoftware.com';
+
+/** Signup posts here, on this host. It is a marketing-site concern and has
+ *  nothing to do with a knowledge base — sending it to the API would put
+ *  unauthenticated public traffic on the machine holding customer corpora, and
+ *  would need CORS and a preflight to do what a relative path does with
+ *  neither. */
+const SIGNUP = '/api/signup';
 
 const CONNECT = `# 1 — tell aimee its knowledge base is remote
 aimee config set kb_mode remote
@@ -52,7 +59,7 @@ export default function AimeeCloud() {
     setSending(true);
     setStatus({ kind: 'info', msg: 'Sending…' });
     try {
-      const res = await fetch(`${API}/signup`, {
+      const res = await fetch(SIGNUP, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim(), name: name.trim(), note: note.trim(), website }),
@@ -62,7 +69,10 @@ export default function AimeeCloud() {
       setEmail('');
       setName('');
       setNote('');
-      setStatus({ kind: 'ok', msg: body.message ?? "Thanks — we'll email you a key shortly." });
+      setStatus({
+        kind: 'ok',
+        msg: body.message ?? "Thanks — we'll email you a setup code shortly.",
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'That did not go through.';
       setStatus({ kind: 'err', msg: `${msg} You can also email hello@rakuensoftware.com.` });
