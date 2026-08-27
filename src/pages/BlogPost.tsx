@@ -16,9 +16,10 @@ export default function BlogPost() {
     <>
       <Meta title={`${post.title} — Rakuen Software`} description={post.excerpt} />
 
-      <Hero eyebrow={byline} title={post.title} subtitle={post.excerpt} />
+      <Hero title={post.title} subtitle={post.excerpt} />
 
       <Section width="narrow">
+        <p className="site-post-byline">{byline}</p>
         {post.tags.length > 0 && (
           <div
             className="site-post-tags"

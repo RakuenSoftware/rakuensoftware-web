@@ -97,7 +97,6 @@ export default function AimeeCloud() {
       />
 
       <Hero
-        eyebrow="aimee cloud"
         title="Your agent forgets. The knowledge base doesn't."
         subtitle="A hosted aimee knowledge base: persistent typed memory, a cross-repo code graph, and hybrid retrieval over both. We run the Postgres and the vectors. Your agents keep running exactly where they are."
         actions={
@@ -107,7 +106,7 @@ export default function AimeeCloud() {
         }
       />
 
-      <Section eyebrow="The shape" title="We host the hard half. You keep the half that runs code.">
+      <Section title="We host the hard half. You keep the half that runs code.">
         <FeatureGrid columns={3} variant="ruled">
           <FeatureCard title="Your own database">
             One PostgreSQL database in its own container, not a shared table with a tenant column.
@@ -158,7 +157,7 @@ export default function AimeeCloud() {
         </Prose>
       </Section>
 
-      <Section eyebrow="Pricing" title="There is a free tier, and it is staying." width="narrow">
+      <Section title="There is a free tier, and it is staying." width="narrow">
         <Prose>
           <p>
             Not a trial and not an introductory rate. A free tier is part of what this is, and what
@@ -184,7 +183,7 @@ export default function AimeeCloud() {
         </Prose>
       </Section>
 
-      <Section eyebrow="Getting started" title="Four steps, and the code does most of one." width="narrow" tone="muted">
+      <Section title="Four steps, and the code does most of one." width="narrow" tone="muted">
         <Prose>
           <p>
             aimee runs on your machine and keeps your knowledge base here. So you install two

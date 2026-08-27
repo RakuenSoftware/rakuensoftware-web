@@ -325,21 +325,18 @@ body {
   border-top: 1px solid var(--sg-border);
 }
 
-.home-foundations__eyebrow {
-  margin-bottom: 12px;
-  color: var(--sg-primary);
-  font-family: var(--sg-font-mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
 .home-foundations__intro h3 {
   max-width: 16ch;
   font-size: 30px;
   font-weight: 640;
   line-height: 1.14;
   letter-spacing: -0.035em;
+}
+
+.site-post-byline {
+  margin-bottom: 20px;
+  color: var(--sg-text-secondary);
+  font-size: 13px;
 }
 
 .home-foundations__intro > p:last-child {
