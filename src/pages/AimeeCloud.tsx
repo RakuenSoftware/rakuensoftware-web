@@ -187,8 +187,8 @@ export default function AimeeCloud() {
       <Section eyebrow="Getting started" title="Four steps, and the code does most of one." width="narrow" tone="muted">
         <Prose>
           <p>
-            aimee runs on your machine and keeps your knowledge base here. So you install two things
-            — a server in Docker and a small client where you write code — and the setup code
+            aimee runs on your machine and keeps your knowledge base here. So you install two
+            things: a server in Docker, and a small client where you write code. The setup code
             connects them to your hosted knowledge base.
           </p>
           <h3>1. Run aimee-server</h3>
