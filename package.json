@@ -15,7 +15,7 @@
     "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
-    "@rakuensoftware/smoothgui": "file:vendor/rakuensoftware-smoothgui-0.12.1.tgz",
+    "@rakuensoftware/smoothgui": "file:vendor/rakuensoftware-smoothgui-0.12.2.tgz",
     "marked": "^15.0.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
