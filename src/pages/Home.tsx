@@ -29,33 +29,6 @@ export default function Home() {
             </a>
           </>
         }
-        media={
-          <div className="home-stack" role="img" aria-label="The shared Rakuen product stack">
-            <div className="home-stack__header">
-              <span className="home-stack__mark">R</span>
-              <span>Rakuen systems map</span>
-              <span className="home-stack__state">open source</span>
-            </div>
-            <div className="home-stack__layer">
-              <span className="home-stack__label">Products</span>
-              <div className="home-stack__items">
-                <strong>SmoothNAS</strong><strong>SmoothRouter</strong><strong>aimee</strong>
-              </div>
-            </div>
-            <div className="home-stack__layer">
-              <span className="home-stack__label">Shared</span>
-              <div className="home-stack__items">
-                <strong>SmoothGUI</strong><strong>SmoothISO</strong><strong>SmoothKernel</strong>
-              </div>
-            </div>
-            <div className="home-stack__layer home-stack__layer--base">
-              <span className="home-stack__label">Linux</span>
-              <div className="home-stack__items">
-                <span>mdadm</span><span>ZFS</span><span>nftables</span><span>dnsmasq</span>
-              </div>
-            </div>
-          </div>
-        }
       />
 
       <section className="home-principles" aria-label="What Rakuen Software builds for">
