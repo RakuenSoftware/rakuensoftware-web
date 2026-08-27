@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { SiteFooter, SiteHeader } from '@rakuensoftware/smoothgui';
+import { SiteFooter, SiteHeader, ThemeToggle } from '@rakuensoftware/smoothgui';
 import type { SiteFooterGroup, SiteNavItem } from '@rakuensoftware/smoothgui';
 import { PRODUCTS } from '../content/products';
 import RouterLink from './RouterLink';
-import ThemeToggle from './ThemeToggle';
 import { trackPageView } from '../lib/analytics';
 
 const NAV: SiteNavItem[] = [
@@ -57,7 +56,7 @@ export default function Layout() {
         }
         items={NAV}
         activeHref={pathname.startsWith('/blog') ? '/blog' : undefined}
-        actions={<ThemeToggle />}
+        actions={<ThemeToggle defaultTheme="dark" storageKey="rakuen-theme" />}
         linkComponent={RouterLink}
       />
       <main>

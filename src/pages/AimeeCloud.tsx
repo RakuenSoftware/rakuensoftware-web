@@ -99,7 +99,7 @@ export default function AimeeCloud() {
       />
 
       <Section eyebrow="The shape" title="We host the hard half. You keep the half that runs code.">
-        <FeatureGrid columns={3}>
+        <FeatureGrid columns={3} variant="ruled">
           <FeatureCard title="Your own database">
             One PostgreSQL database in its own container, not a shared table with a tenant column.
             aimee's corpus tables have no tenant column, so a knowledge base serves exactly one
