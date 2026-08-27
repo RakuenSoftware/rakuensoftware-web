@@ -23,7 +23,6 @@ export default function ProductPage() {
       <Meta title={`${product.name} — Rakuen Software`} description={product.summary} />
 
       <Hero
-        eyebrow={product.status != null ? undefined : 'Product'}
         title={product.name}
         subtitle={product.summary}
         actions={
@@ -43,7 +42,7 @@ export default function ProductPage() {
         }
       />
 
-      <Section eyebrow={product.tagline} title="What it does">
+      <Section title="What it does">
         <FeatureGrid columns={3} variant="ruled">
           {product.features.map((feature) => (
             <FeatureCard key={feature.title} title={feature.title}>

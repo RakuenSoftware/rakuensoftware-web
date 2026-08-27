@@ -7,7 +7,6 @@ export default function NotFound() {
     <>
       <Meta title="Page not found — Rakuen Software" />
       <Hero
-        eyebrow="404"
         title="That page doesn’t exist"
         subtitle="The link may be out of date, or the page may have moved."
         actions={<RouterLink href="/"><Button variant="primary">Back to the home page</Button></RouterLink>}

@@ -19,7 +19,6 @@ export default function Home() {
       />
 
       <Hero
-        eyebrow="Independent systems software"
         title={<>Linux infrastructure.<br /><span className="home-hero__accent">Without the black box.</span></>}
         subtitle="Storage, routing and AI tooling built on the Linux stack you already know. Operate it from a browser. Inspect it from a shell. Keep control of the machine underneath."
         actions={
@@ -70,7 +69,6 @@ export default function Home() {
       <div className="home-portfolio">
         <Section
           id="products"
-          eyebrow="Portfolio"
           title="Systems you can understand under failure"
           description="The products solve different problems, but share one rule: the interface must expose the system, not hide it."
         >
@@ -92,7 +90,6 @@ export default function Home() {
 
           <div className="home-foundations">
             <div className="home-foundations__intro">
-              <p className="home-foundations__eyebrow">The foundation</p>
               <h3>Built once. Shared all the way down.</h3>
               <p>The filesystem, parity engine, interface, installer and kernel stay independent—and become infrastructure for everything above them.</p>
             </div>
@@ -111,7 +108,7 @@ export default function Home() {
       </div>
 
       <div className="home-operating-model">
-        <Section eyebrow="Operating model" title="One stack. Clear boundaries.">
+        <Section title="One stack. Clear boundaries.">
           <div className="home-model-grid">
             <article>
               <span>01</span>
@@ -135,7 +132,6 @@ export default function Home() {
       {recent.length > 0 && (
         <div className="home-writing">
           <Section
-            eyebrow="Field notes"
             title="Engineering, measured"
             description="Release notes, design decisions and experiments—including the results that changed our minds."
           >
