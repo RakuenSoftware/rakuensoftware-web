@@ -5,13 +5,22 @@ import type { SiteFooterGroup, SiteNavItem } from '@rakuensoftware/smoothgui';
 import { PRODUCTS } from '../content/products';
 import RouterLink from './RouterLink';
 import { trackPageView } from '../lib/analytics';
+import { aimeeCloudHref, AIMEE_CLOUD_URL } from '../../lib/cloud-host.mjs';
 
-const NAV: SiteNavItem[] = [
-  { label: 'Products', href: '/#products' },
-  { label: 'Blog', href: '/blog' },
-  { label: 'GitHub', href: 'https://github.com/RakuenSoftware', external: true },
-  { label: 'Discord', href: 'https://discord.gg/FjGjvcgAqz', external: true },
-];
+/* aimee cloud sits in the header beside the rest because it is a service
+ * someone can sign up for, not a page about a product. Its href is decided per
+ * render rather than baked into this list: on aimee.rakuensoftware.com the
+ * service is the site, and a nav item there must not be an absolute link back
+ * to the page the reader is already on. */
+function navItems(cloudHref: string): SiteNavItem[] {
+  return [
+    { label: 'Products', href: '/#products' },
+    { label: 'aimee cloud', href: cloudHref, external: cloudHref === AIMEE_CLOUD_URL },
+    { label: 'Blog', href: '/blog' },
+    { label: 'GitHub', href: 'https://github.com/RakuenSoftware', external: true },
+    { label: 'Discord', href: 'https://discord.gg/FjGjvcgAqz', external: true },
+  ];
+}
 
 const FOOTER_GROUPS: SiteFooterGroup[] = [
   {
@@ -30,6 +39,7 @@ const FOOTER_GROUPS: SiteFooterGroup[] = [
 
 export default function Layout() {
   const { pathname, hash, search } = useLocation();
+  const cloudHref = aimeeCloudHref(typeof window === 'undefined' ? '' : window.location.hostname);
 
   useEffect(() => {
     trackPageView(`${pathname}${search}`);
@@ -54,7 +64,7 @@ export default function Layout() {
             <span>Rakuen Software</span>
           </RouterLink>
         }
-        items={NAV}
+        items={navItems(cloudHref)}
         activeHref={pathname.startsWith('/blog') ? '/blog' : undefined}
         actions={<ThemeToggle defaultTheme="dark" storageKey="rakuen-theme" />}
         linkComponent={RouterLink}

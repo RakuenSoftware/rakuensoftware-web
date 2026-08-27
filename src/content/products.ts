@@ -10,6 +10,16 @@ export interface ProductSection {
   bullets?: string[];
 }
 
+/** A hosted, paid-or-free service run by us on top of an open-source product. */
+export interface ProductHosted {
+  /** The service's own name, e.g. "aimee cloud". */
+  name: string;
+  /** Its public address. */
+  href: string;
+  /** One sentence on what it saves the reader from running themselves. */
+  summary: string;
+}
+
 export interface Product {
   slug: string;
   name: string;
@@ -20,6 +30,12 @@ export interface Product {
   repo?: string;
   /** Shown as a badge, e.g. "Private beta". Omitted when generally available. */
   status?: string;
+  /**
+   * A hosted service built on this product, when one exists. Kept beside the
+   * product rather than special-cased in the page so a second one needs no
+   * new code.
+   */
+  hosted?: ProductHosted;
   features: ProductFeature[];
   sections: ProductSection[];
 }
@@ -32,6 +48,12 @@ export const PRODUCTS: Product[] = [
     summary:
       'Your AI tool starts every session knowing nothing. aimee gives it memory that survives, a queryable map of your code, and limits it cannot write past. Point any tool at it and your context follows you between them.',
     repo: 'https://github.com/RakuenSoftware/aimee',
+    hosted: {
+      name: 'aimee cloud',
+      href: 'https://aimee.rakuensoftware.com',
+      summary:
+        'We run the knowledge base, its database and its backups, so you install a server and a client and nothing else. There is a free tier.',
+    },
     features: [
       {
         icon: '🧠',
