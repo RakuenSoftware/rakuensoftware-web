@@ -34,6 +34,11 @@ export default function ProductPage() {
                 <Button variant="primary">View on GitHub</Button>
               </a>
             )}
+            {product.hosted != null && (
+              <a href={product.hosted.href}>
+                <Button variant="ghost">Try {product.hosted.name}</Button>
+              </a>
+            )}
           </>
         }
       />
@@ -64,7 +69,22 @@ export default function ProductPage() {
         </Section>
       ))}
 
-      {product.repo != null ? (
+      {product.hosted != null && product.repo != null ? (
+        <CallToAction
+          title={`Two ways to run ${product.name}`}
+          description={`Run it yourself from the source, or let us run it for you. ${product.hosted.summary}`}
+          actions={
+            <>
+              <a href={product.hosted.href}>
+                <Button variant="primary">Go to {product.hosted.name}</Button>
+              </a>
+              <a href={product.repo} target="_blank" rel="noreferrer">
+                <Button variant="ghost">Open the repository</Button>
+              </a>
+            </>
+          }
+        />
+      ) : product.repo != null ? (
         <CallToAction
           title={`Try ${product.name}`}
           description="Source, issues and releases are on GitHub."
