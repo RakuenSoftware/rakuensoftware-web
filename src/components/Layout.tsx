@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { SiteFooter, SiteHeader } from '@rakuensoftware/smoothgui';
+import { SiteFooter, SiteHeader, ThemeToggle } from '@rakuensoftware/smoothgui';
 import type { SiteFooterGroup, SiteNavItem } from '@rakuensoftware/smoothgui';
 import { PRODUCTS } from '../content/products';
 import RouterLink from './RouterLink';
-import ThemeToggle from './ThemeToggle';
 import { trackPageView } from '../lib/analytics';
 
 const NAV: SiteNavItem[] = [
@@ -49,10 +48,15 @@ export default function Layout() {
   return (
     <>
       <SiteHeader
-        brand={<RouterLink href="/">Rakuen Software</RouterLink>}
+        brand={
+          <RouterLink href="/" className="site-wordmark">
+            <span className="site-wordmark__mark" aria-hidden="true">R</span>
+            <span>Rakuen Software</span>
+          </RouterLink>
+        }
         items={NAV}
         activeHref={pathname.startsWith('/blog') ? '/blog' : undefined}
-        actions={<ThemeToggle />}
+        actions={<ThemeToggle defaultTheme="dark" storageKey="rakuen-theme" />}
         linkComponent={RouterLink}
       />
       <main>
@@ -60,10 +64,10 @@ export default function Layout() {
       </main>
       <SiteFooter
         brand={
-          <>
-            <strong>Rakuen Software</strong>
+          <div className="site-footer-brand">
+            <strong><span aria-hidden="true">R / </span>Rakuen Software</strong>
             <p>Linux storage, routing and AI tooling built on tools you already run.</p>
-          </>
+          </div>
         }
         groups={FOOTER_GROUPS}
         bottom={<span>© {new Date().getFullYear()} Rakuen Software</span>}

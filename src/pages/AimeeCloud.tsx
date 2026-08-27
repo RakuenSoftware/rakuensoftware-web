@@ -99,29 +99,29 @@ export default function AimeeCloud() {
       />
 
       <Section eyebrow="The shape" title="We host the hard half. You keep the half that runs code.">
-        <FeatureGrid columns={3}>
-          <FeatureCard icon="🗄️" title="Your own database">
+        <FeatureGrid columns={3} variant="ruled">
+          <FeatureCard title="Your own database">
             One PostgreSQL database in its own container, not a shared table with a tenant column.
             aimee's corpus tables have no tenant column, so a knowledge base serves exactly one
             customer by construction.
           </FeatureCard>
-          <FeatureCard icon="🔎" title="Retrieval in full">
+          <FeatureCard title="Retrieval in full">
             Lexical search, dense vector search over a bundled embedder, and the cross-repo code
             graph. Symbols, callers, blast radius.
           </FeatureCard>
-          <FeatureCard icon="💻" title="Your code never moves">
+          <FeatureCard title="Your code never moves">
             Delegates run on your machine, beside the worktree they already have, with your
             toolchain and your credentials. We host the database, not the execution.
           </FeatureCard>
-          <FeatureCard icon="🔑" title="Keys you control">
+          <FeatureCard title="Keys you control">
             Read-only keys for CI, expiring keys for contractors, and revocation that takes effect
             on the next request. No restart, no propagation delay.
           </FeatureCard>
-          <FeatureCard icon="🧳" title="Leaving is a config change">
+          <FeatureCard title="Leaving is a config change">
             Same schema, same software. Export it and point your aimee at a local knowledge base.
             Nothing to migrate, nothing to re-index.
           </FeatureCard>
-          <FeatureCard icon="💾" title="Backed up, and the restores are tested">
+          <FeatureCard title="Backed up, and the restores are tested">
             Nightly dumps, each one restored into a scratch database and checked table by table
             before it is kept. A backup nobody has restored is a file, not a backup.
           </FeatureCard>
