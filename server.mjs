@@ -3,6 +3,7 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { addressInCidr, buildSummary, createEventStore, normalizeEvent } from './lib/analytics.mjs';
+import { isCloudHost } from './lib/cloud-host.mjs';
 import { recordSignup, renderMail, sendMail, sendMailSmtp, validateSignup } from './lib/signup.mjs';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
@@ -90,9 +91,58 @@ const types = {
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
   '.svg': 'image/svg+xml; charset=utf-8',
+  /* robots.txt and sitemap.xml are emitted into dist by the emit-seo plugin.
+   * Served as octet-stream they are ignored: a sitemap has to be XML for Search
+   * Console to accept it, and a robots.txt served as a download is not a
+   * robots.txt. */
+  '.txt': 'text/plain; charset=utf-8',
   '.webp': 'image/webp',
   '.woff2': 'font/woff2',
+  '.xml': 'application/xml; charset=utf-8',
 };
+
+async function isFile(path) {
+  try {
+    return (await stat(path)).isFile();
+  } catch {
+    return false;
+  }
+}
+
+/* The file in dist that answers `pathname`, or '' when nothing does.
+ *
+ * Two shapes resolve. A real asset (/assets/index-abc.js, /robots.txt) is
+ * served directly. A prerendered route is a directory holding index.html:
+ * emit-seo writes dist/blog/<slug>/index.html so the document a crawler
+ * receives carries that page's own title, canonical and Open Graph tags rather
+ * than the shared shell. Anything else returns '' and the caller falls back.
+ *
+ * Everything is checked to be inside dist first, so a path that climbs out with
+ * ../ resolves to nothing rather than to a file on the host.
+ */
+async function resolveInDist(pathname) {
+  const candidate = resolve(distDir, `.${pathname}`);
+  const inside = candidate === distDir || candidate.startsWith(`${distDir}${sep}`);
+  if (!inside) return '';
+  if (await isFile(candidate)) return candidate;
+  const indexFile = resolve(candidate, 'index.html');
+  return (await isFile(indexFile)) ? indexFile : '';
+}
+
+/* Which prerendered page the index route should serve.
+ *
+ * aimee cloud is this same build on its own hostname, where App renders the
+ * cloud page at "/" instead of the company home page. The served head has to
+ * follow that decision, or every share of https://aimee.rakuensoftware.com/
+ * previews as the Rakuen Software home page. The canonical inside that file
+ * still points at rakuensoftware.com/cloud, which is what we want: it is one
+ * page on two addresses, and only one of them should be indexed.
+ */
+function indexRouteFor(req, pathname) {
+  if (pathname !== '/') return pathname;
+  const host = (req.headers.host ?? '').split(':')[0];
+  return isCloudHost(host) ? '/cloud' : '/';
+}
 
 function securityHeaders(extra = {}) {
   return {
@@ -268,16 +318,16 @@ export async function servePublic(req, res) {
   } catch {
     return send(res, 400, 'Bad request');
   }
-  const candidate = resolve(distDir, `.${requested}`);
-  let file = candidate.startsWith(`${distDir}${sep}`) ? candidate : '';
-  try {
-    if (!file || !(await stat(file)).isFile()) file = '';
-  } catch {
-    file = '';
-  }
+  let file = await resolveInDist(indexRouteFor(req, requested));
   let status = 200;
   if (!file) {
-    file = resolve(distDir, 'index.html');
+    /* Nothing prerendered answers this path, so the app will render NotFound.
+     * Serve the shell built for that rather than the home page's: index.html
+     * now carries a canonical, and handing it to an unknown URL tells a search
+     * engine the two are the same page. Falls back to index.html only for a
+     * build made before 404.html existed. */
+    file = resolve(distDir, '404.html');
+    if (!(await isFile(file))) file = resolve(distDir, 'index.html');
     /* The app renders NotFound for this path either way. Sending 404 with the
      * same shell means a reader sees the page and a crawler is told the article
      * is gone, which a 200 never says. */

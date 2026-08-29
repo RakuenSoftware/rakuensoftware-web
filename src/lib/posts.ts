@@ -1,5 +1,5 @@
 import { marked } from 'marked';
-import { parseFrontmatter, str, validatePost } from './frontmatter';
+import { excerptFrom, parseFrontmatter, str, validatePost } from './frontmatter';
 
 export interface Post {
   slug: string;
@@ -44,11 +44,7 @@ function buildPost(path: string, raw: string): Post | null {
 
   const { data, body } = parseFrontmatter(raw);
   const tags = Array.isArray(data.tags) ? data.tags : [];
-  const explicitExcerpt = str(data.excerpt);
-  const excerpt =
-    explicitExcerpt ??
-    body.split(/\r?\n\r?\n/).map((p) => p.trim()).find((p) => p !== '' && !p.startsWith('#')) ??
-    '';
+  const excerpt = excerptFrom(data, body);
 
   return {
     slug: str(data.slug) ?? slugFromPath(path),

@@ -11,6 +11,7 @@ import {
 } from '@rakuensoftware/smoothgui';
 import { productBySlug } from '../content/products';
 import Meta from '../components/Meta';
+import { productMeta } from '../../lib/site-meta.mjs';
 
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -20,7 +21,7 @@ export default function ProductPage() {
 
   return (
     <>
-      <Meta title={`${product.name} — Rakuen Software`} description={product.summary} />
+      <Meta {...productMeta(product)} />
 
       <Hero
         title={product.name}
