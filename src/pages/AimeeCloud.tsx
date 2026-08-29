@@ -14,6 +14,7 @@ import {
 } from '@rakuensoftware/smoothgui';
 import type { InlineStatusMessage } from '@rakuensoftware/smoothgui';
 import Meta from '../components/Meta';
+import { STATIC_PAGES } from '../../lib/site-meta.mjs';
 
 /** Signup posts here, on this host. It is a marketing-site concern and has
  *  nothing to do with a knowledge base. Sending it to the API would put
@@ -91,10 +92,7 @@ export default function AimeeCloud() {
 
   return (
     <>
-      <Meta
-        title="aimee cloud | Rakuen Software"
-        description="A hosted aimee knowledge base. We run the Postgres and the vectors; your agents keep running where they already are."
-      />
+      <Meta {...STATIC_PAGES['/cloud']} />
 
       <Hero
         title="Your agent forgets. The knowledge base doesn't."

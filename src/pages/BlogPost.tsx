@@ -3,6 +3,7 @@ import { Badge, Hero, Prose, Section } from '@rakuensoftware/smoothgui';
 import { formatDate, postBySlug } from '../lib/posts';
 import RouterLink from '../components/RouterLink';
 import Meta from '../components/Meta';
+import { postMeta } from '../../lib/site-meta.mjs';
 
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>();
@@ -14,7 +15,7 @@ export default function BlogPost() {
 
   return (
     <>
-      <Meta title={`${post.title} — Rakuen Software`} description={post.excerpt} />
+      <Meta {...postMeta(post)} type="article" published={post.date} />
 
       <Hero title={post.title} subtitle={post.excerpt} />
 

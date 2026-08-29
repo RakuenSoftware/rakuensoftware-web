@@ -3,6 +3,7 @@ import { PRODUCTS } from '../content/products';
 import { POSTS, formatDate } from '../lib/posts';
 import RouterLink from '../components/RouterLink';
 import Meta from '../components/Meta';
+import { STATIC_PAGES } from '../../lib/site-meta.mjs';
 
 const FEATURED_SLUGS = new Set(['aimee', 'smoothnas', 'smoothrouter']);
 const featuredProducts = PRODUCTS.filter((product) => FEATURED_SLUGS.has(product.slug));
@@ -13,10 +14,7 @@ export default function Home() {
 
   return (
     <div className="home-page">
-      <Meta
-        title="Rakuen Software — Linux storage, routing and AI tooling"
-        description="SmoothNAS, SmoothFS, SmoothRouter, nonraid, aimee and the Smooth* platform. Linux appliances built on mdadm, ZFS, nftables and dnsmasq, managed from a browser."
-      />
+      <Meta {...STATIC_PAGES['/']} />
 
       <Hero
         title={<>Linux infrastructure.<br /><span className="home-hero__accent">Without the black box.</span></>}

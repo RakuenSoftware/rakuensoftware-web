@@ -2,14 +2,12 @@ import { ArticleCard, EmptyState, Hero, Section } from '@rakuensoftware/smoothgu
 import { POSTS, formatDate } from '../lib/posts';
 import RouterLink from '../components/RouterLink';
 import Meta from '../components/Meta';
+import { STATIC_PAGES } from '../../lib/site-meta.mjs';
 
 export default function BlogIndex() {
   return (
     <>
-      <Meta
-        title="Blog — Rakuen Software"
-        description="Release notes, design decisions and engineering write-ups from the Rakuen Software team."
-      />
+      <Meta {...STATIC_PAGES['/blog']} />
 
       <Hero
         title="Blog"

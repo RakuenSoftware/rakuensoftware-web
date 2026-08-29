@@ -66,6 +66,53 @@ Port 3001 is firewalled off externally, so nothing is exposed in the meantime.
 During `vite` development, tracking is disabled by default. Set
 `VITE_ANALYTICS_ENABLED=true` only when intentionally exercising the collector.
 
+## Search and link previews
+
+The site is a client-rendered SPA, so for a long time every URL served the same
+`<head>`: one title (`Rakuen Software`), one description, no canonical, and no
+Open Graph tags at all. Googlebot renders JavaScript and could eventually read
+the per-route titles `Meta.tsx` sets after hydration, but the link crawlers
+behind Reddit, LinkedIn, Slack and Discord do not run scripts — they fetch the
+HTML once. Reddit supplies most of this site's readers, so every article shared
+there previewed as the same generic card.
+
+`vite.config.ts` now has an `emit-seo` plugin that runs after the bundle and
+writes, into whatever `--outDir` the build used:
+
+- **one document per route** — `/`, `/blog`, `/cloud`, every `/products/<slug>`
+  and every `/blog/<slug>` — as `<route>/index.html`, each with its own title,
+  description, canonical, Open Graph and Twitter tags. Only the `<head>` is
+  prerendered; the body is still the empty root div and React renders
+  everything, so there is no second rendering path to keep in step with the app.
+- **`404.html`**, a shell that claims no canonical and asks not to be indexed.
+  The server sends it for any path with no page behind it. Sending `index.html`
+  there would tell a search engine a mistyped URL is another copy of the home
+  page.
+- **`robots.txt`** and **`sitemap.xml`**. Both used to 404 into the SPA fallback
+  and answer `200 text/html`, which meant there was no sitemap to submit.
+
+`server.mjs` resolves a request to `<path>/index.html` when no file matches, and
+serves `/` from `cloud/index.html` when the `Host` is an aimee cloud hostname —
+the same decision `App.tsx` makes for the index route, so a share of
+`https://aimee.rakuensoftware.com/` previews as aimee cloud. Its canonical still
+points at `rakuensoftware.com/cloud`: one page on two addresses, one of them
+indexed.
+
+Every tag comes from `lib/site-meta.mjs`, which the build and `Meta.tsx` both
+read — the prerendered document and the tags the router swaps in during
+client-side navigation cannot drift. `SITE_HOST` at build time sets the origin
+in canonicals, `og:url`, `robots.txt` and the sitemap; it defaults to
+`rakuensoftware.com`.
+
+**None of this exists under `vite dev`.** The plugin is `apply: 'build'`, so in
+development there is no `robots.txt`, no sitemap and no prerendered head — only
+what `Meta.tsx` sets at runtime. Check preview cards against a build, not the
+dev server.
+
+There is deliberately **no `og:image`**: this repository has no brand image
+asset, and pointing at one that 404s makes previews worse than having none. Add
+one and the tag belongs in `headTags()` in `lib/site-meta.mjs`.
+
 ## Deploy
 
 There is no CI. Deploying **code** is: merge to `main`, then run the deploy

@@ -50,6 +50,26 @@ export function str(value: string | string[] | undefined): string | undefined {
 }
 
 /**
+ * The post's summary line: the explicit `excerpt` when the author wrote one,
+ * otherwise its first real paragraph.
+ *
+ * Lives here rather than in posts.ts because the build needs the same string
+ * without loading the browser bundle — it becomes the meta description and the
+ * og:description of the prerendered page, and those must match what the site
+ * itself shows.
+ */
+export function excerptFrom(data: Frontmatter, body: string): string {
+  return (
+    str(data.excerpt) ??
+    body
+      .split(/\r?\n\r?\n/)
+      .map((p) => p.trim())
+      .find((p) => p !== '' && !p.startsWith('#')) ??
+    ''
+  );
+}
+
+/**
  * Returns the reasons `raw` is not a publishable post, empty when it is fine.
  * Used by the build-time checker so authoring mistakes fail `npm run build`
  * instead of producing a blank page in the browser.
