@@ -251,6 +251,22 @@ body {
   font-size: 13px;
 }
 
+.site-post-review {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0 0 1.5rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid color-mix(in srgb, var(--sg-warning, #b7791f) 55%, transparent);
+  border-left-width: 4px;
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--sg-warning, #b7791f) 10%, transparent);
+}
+
+.site-post-review strong,
+.site-post-review span {
+  display: block;
+}
+
 .home-foundations__intro > p:last-child {
   margin-top: 14px;
   color: var(--sg-text-secondary);

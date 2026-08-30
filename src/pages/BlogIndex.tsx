@@ -1,5 +1,5 @@
 import { ArticleCard, EmptyState, Hero, Section } from '@rakuensoftware/smoothgui';
-import { POSTS, formatDate } from '../lib/posts';
+import { PUBLISHED_POSTS, formatDate } from '../lib/posts';
 import RouterLink from '../components/RouterLink';
 import Meta from '../components/Meta';
 import { STATIC_PAGES } from '../../lib/site-meta.mjs';
@@ -15,10 +15,10 @@ export default function BlogIndex() {
       />
 
       <Section width="narrow">
-        {POSTS.length === 0 ? (
+        {PUBLISHED_POSTS.length === 0 ? (
           <EmptyState message="No posts yet. Check back soon." icon="📝" />
         ) : (
-          POSTS.map((post) => (
+          PUBLISHED_POSTS.map((post) => (
             <ArticleCard
               key={post.slug}
               title={post.title}

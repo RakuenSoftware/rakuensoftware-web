@@ -9,6 +9,8 @@ export interface Post {
   author?: string;
   tags: string[];
   excerpt: string;
+  /** Reachable for right of reply, but not an official publication. */
+  review: boolean;
   /** Markdown body rendered to HTML. */
   html: string;
 }
@@ -53,6 +55,7 @@ function buildPost(path: string, raw: string): Post | null {
     author: str(data.author),
     tags,
     excerpt,
+    review: str(data.site_status) === 'right-of-reply-review',
     html: marked.parse(body, { async: false }),
   };
 }
@@ -62,6 +65,9 @@ export const POSTS: Post[] = Object.entries(files)
   .map(([path, raw]) => buildPost(path, raw))
   .filter((p): p is Post => p !== null)
   .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+
+/** Officially published posts. Review copies are deliberately undiscoverable. */
+export const PUBLISHED_POSTS = POSTS.filter((post) => !post.review);
 
 export function postBySlug(slug: string): Post | undefined {
   return POSTS.find((p) => p.slug === slug);

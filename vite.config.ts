@@ -61,9 +61,10 @@ interface Route {
   description: string;
   type?: string;
   published?: string;
+  noindex?: boolean;
 }
 
-function readPosts(): { slug: string; title: string; excerpt: string; date: string }[] {
+function readPosts(): { slug: string; title: string; excerpt: string; date: string; review: boolean }[] {
   return readdirSync(POSTS_DIR)
     .filter((f) => f.endsWith('.md'))
     .map((file) => {
@@ -73,6 +74,7 @@ function readPosts(): { slug: string; title: string; excerpt: string; date: stri
         title: str(data.title)!,
         date: str(data.date)!,
         excerpt: excerptFrom(data, body),
+        review: str(data.site_status) === 'right-of-reply-review',
       };
     })
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
@@ -88,7 +90,8 @@ function routes(): Route[] {
       path: `/blog/${post.slug}`,
       ...postMeta(post),
       type: 'article',
-      published: post.date,
+      published: post.review ? undefined : post.date,
+      noindex: post.review,
     });
   }
   return list;
@@ -139,6 +142,7 @@ function emitSeo(): Plugin {
             description: route.description,
             type: route.type,
             published: route.published,
+            noindex: route.noindex,
           }),
         );
         const file =
@@ -173,7 +177,7 @@ function emitSeo(): Plugin {
         join(outDir, 'sitemap.xml'),
         sitemapXml(
           origin,
-          all.map((r) => ({ path: r.path, lastmod: r.published })),
+          all.filter((r) => !r.noindex).map((r) => ({ path: r.path, lastmod: r.published })),
         ),
       );
 

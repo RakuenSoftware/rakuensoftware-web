@@ -1,6 +1,6 @@
 import { Button, CallToAction, Hero, Section } from '@rakuensoftware/smoothgui';
 import { PRODUCTS } from '../content/products';
-import { POSTS, formatDate } from '../lib/posts';
+import { PUBLISHED_POSTS, formatDate } from '../lib/posts';
 import RouterLink from '../components/RouterLink';
 import Meta from '../components/Meta';
 import { STATIC_PAGES } from '../../lib/site-meta.mjs';
@@ -10,7 +10,7 @@ const featuredProducts = PRODUCTS.filter((product) => FEATURED_SLUGS.has(product
 const foundationProducts = PRODUCTS.filter((product) => !FEATURED_SLUGS.has(product.slug));
 
 export default function Home() {
-  const recent = POSTS.slice(0, 3);
+  const recent = PUBLISHED_POSTS.slice(0, 3);
 
   return (
     <div className="home-page">

@@ -150,11 +150,17 @@ article and the evidence behind it. `scripts/sync-articles.mjs` pulls the live
 ones into `src/content/posts/` before every build. That directory is generated
 and gitignored: editing it changes nothing, because the next build overwrites it.
 
-`articles/PUBLISHED` in rakuen-blog is the list of live articles, one slug per
-line, and a slug is both the article's directory there and its URL here. **To
-publish, add a line to that file and merge it.** To change a post, change it
-there. Either way `scripts/autopublish.sh` notices the branch move within three
-minutes and rebuilds the site — no commit here, no deploy.
+`articles/PUBLISHED` in rakuen-blog is the list of officially published
+articles, one slug per line, and a slug is both the article's directory there
+and its URL here. **To publish, add a line to that file and merge it.** To change
+a post, change it there. Either way `scripts/autopublish.sh` notices the branch
+move within three minutes and rebuilds the site — no commit here, no deploy.
+
+`articles/REVIEW` is a separate right-of-reply state. A named draft is served at
+the same `/blog/<slug>` URL it will use if published, but it is absent from the
+home page, blog index and sitemap, has no canonical or publication-time
+metadata, and carries `noindex`. Moving the slug from `REVIEW` to `PUBLISHED`
+publishes it without changing the URL.
 
 Frontmatter is read from the article as it stands in rakuen-blog:
 

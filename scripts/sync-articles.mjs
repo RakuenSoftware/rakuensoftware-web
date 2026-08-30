@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Pull published articles from the blog repository into src/content/posts.
+ * Pull published articles and unlisted review copies from the blog repository
+ * into src/content/posts.
  *
  * Publishing used to mean merging the same article to two repositories: the
  * evidence repo, which owns the article and its provenance, and this one, which
@@ -54,6 +55,8 @@ const LOCAL = process.env.BLOG_LOCAL;
 
 // The manifest is the publishing decision, so it lives with the articles.
 const MANIFEST = 'articles/PUBLISHED';
+const REVIEW_MANIFEST = 'articles/REVIEW';
+const REVIEW_FIELD = 'site_status: right-of-reply-review';
 
 // Publishing more than a couple of articles in one tick is not how anyone
 // writes. It is how a bad merge, a reverted revert or a resurrected branch
@@ -100,11 +103,12 @@ function hasFrontmatter(text) {
 // cleaning up is a line nobody meant to write.
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-function readManifest(root) {
-  const path = join(root, MANIFEST);
+function readManifest(root, manifest, required = true) {
+  const path = join(root, manifest);
   if (!existsSync(path)) {
+    if (!required) return [];
     fail(
-      `no ${MANIFEST} in the blog checkout at ${root}\n` +
+      `no ${manifest} in the blog checkout at ${root}\n` +
         '  That file is the list of live articles. Without it there is nothing to\n' +
         '  publish, and building an empty blog would quietly retire every URL.',
     );
@@ -120,7 +124,7 @@ function readManifest(root) {
       const slug = line.replace(/#.*$/, '').trim();
       if (slug === '') return;
       if (!SLUG.test(slug)) {
-        bad.push(`${MANIFEST}:${i + 1}: ${JSON.stringify(slug)}`);
+        bad.push(`${manifest}:${i + 1}: ${JSON.stringify(slug)}`);
         return;
       }
       if (seen.has(slug)) return;
@@ -130,15 +134,15 @@ function readManifest(root) {
 
   if (bad.length > 0) {
     fail(
-      `${bad.length} unusable line(s) in ${MANIFEST}:\n` +
+      `${bad.length} unusable line(s) in ${manifest}:\n` +
         bad.map((b) => `    ${b}`).join('\n') +
         '\n  A line is one article directory name: lowercase letters, digits and\n' +
         '  hyphens, nothing else. Comments start with #.',
     );
   }
 
-  if (slugs.length === 0) {
-    fail(`${MANIFEST} names no articles, refusing to build an empty blog`);
+  if (required && slugs.length === 0) {
+    fail(`${manifest} names no articles, refusing to build an empty blog`);
   }
 
   return slugs;
@@ -146,7 +150,16 @@ function readManifest(root) {
 
 const root = source();
 const articlesDir = join(root, 'articles');
-const PUBLISHED = readManifest(root);
+const PUBLISHED = readManifest(root, MANIFEST);
+const REVIEW = readManifest(root, REVIEW_MANIFEST, false);
+const overlap = PUBLISHED.filter((slug) => REVIEW.includes(slug));
+if (overlap.length > 0) {
+  fail(
+    `${overlap.length} article(s) appear in both ${MANIFEST} and ${REVIEW_MANIFEST}: ${overlap.join(', ')}\n` +
+      '  A right-of-reply copy is not published. Move each slug from one manifest\n' +
+      '  to the other so its state is unambiguous.',
+  );
+}
 
 // What the last build published. An article that disappears from this list has
 // either been unpublished on purpose or lost its frontmatter by accident, and
@@ -158,6 +171,9 @@ const first = !existsSync(OUT);
 const before = first
   ? []
   : readdirSync(OUT).filter((f) => f.endsWith('.md')).map((f) => f.slice(0, -3));
+const beforePublished = first
+  ? []
+  : before.filter((slug) => !readFileSync(join(OUT, `${slug}.md`), 'utf8').includes(`\n${REVIEW_FIELD}\n`));
 
 // Everything is resolved in memory and every guard runs before a single file is
 // written, so a refused sync leaves the previous posts exactly where they were.
@@ -170,7 +186,7 @@ const before = first
 const articles = new Map();
 const missing = [];
 
-for (const slug of PUBLISHED) {
+for (const slug of [...PUBLISHED, ...REVIEW]) {
   const md = join(articlesDir, slug, 'article', `${slug}.md`);
   if (!existsSync(md)) {
     missing.push(slug);
@@ -181,18 +197,22 @@ for (const slug of PUBLISHED) {
     missing.push(slug);
     continue;
   }
-  articles.set(slug, text);
+  articles.set(slug, {
+    text: REVIEW.includes(slug) ? text.replace(/^---\r?\n/, `---\n${REVIEW_FIELD}\n`) : text,
+    review: REVIEW.includes(slug),
+  });
 }
 
-const published = [...articles.keys()];
+const published = [...articles].filter(([, article]) => !article.review).map(([slug]) => slug);
+const reviews = [...articles].filter(([, article]) => article.review).map(([slug]) => slug);
 
 // A named article that cannot be found is a live post about to vanish, usually
 // because a slug was renamed in rakuen-blog. Stop rather than serve a 404 where
 // a published URL used to be.
 if (missing.length > 0) {
   fail(
-    `${missing.length} published article(s) not found in rakuen-blog: ${missing.join(', ')}\n` +
-      `  Each is named in ${MANIFEST} but has no articles/<slug>/article/<slug>.md\n` +
+    `${missing.length} named article(s) not found in rakuen-blog: ${missing.join(', ')}\n` +
+      `  Each is named in ${MANIFEST} or ${REVIEW_MANIFEST} but has no articles/<slug>/article/<slug>.md\n` +
       '  with frontmatter. If a slug was renamed, changing it there changes a live URL.',
   );
 }
@@ -201,7 +221,7 @@ if (missing.length > 0) {
 // so an article does not sit finished and unpublished because nobody noticed.
 const held = readdirSync(articlesDir)
   .sort()
-  .filter((slug) => !PUBLISHED.includes(slug))
+  .filter((slug) => !PUBLISHED.includes(slug) && !REVIEW.includes(slug))
   .filter((slug) => existsSync(join(articlesDir, slug, 'article', `${slug}.md`)));
 
 // An empty blog is a silent failure that still builds and still serves, so it
@@ -210,7 +230,7 @@ if (published.length === 0) {
   fail('nothing published, refusing to build an empty blog');
 }
 
-const vanished = before.filter((slug) => !published.includes(slug));
+const vanished = beforePublished.filter((slug) => !published.includes(slug) && !reviews.includes(slug));
 if (vanished.length > 0 && process.env.ALLOW_UNPUBLISH !== '1') {
   fail(
     `${vanished.length} previously published article(s) are gone: ${vanished.join(', ')}\n` +
@@ -219,7 +239,7 @@ if (vanished.length > 0 && process.env.ALLOW_UNPUBLISH !== '1') {
   );
 }
 
-const added = published.filter((slug) => !before.includes(slug));
+const added = published.filter((slug) => !beforePublished.includes(slug));
 if (!first && added.length > BULK && process.env.ALLOW_BULK_PUBLISH !== '1') {
   fail(
     `${added.length} article(s) would go live at once: ${added.join(', ')}\n` +
@@ -232,10 +252,11 @@ if (!first && added.length > BULK && process.env.ALLOW_BULK_PUBLISH !== '1') {
 // Past every guard: replace the generated directory.
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
-for (const [slug, text] of articles) writeFileSync(join(OUT, `${slug}.md`), text);
+for (const [slug, article] of articles) writeFileSync(join(OUT, `${slug}.md`), article.text);
 
 // Name what changed. The 2026-08-12 incident was not that the wrong articles
 // shipped but that nothing said which ones had.
-console.log(`articles: ${published.length} published, ${held.length} held`);
+console.log(`articles: ${published.length} published, ${reviews.length} in right-of-reply review, ${held.length} held`);
 for (const s of published) console.log(`  ${!first && added.includes(s) ? 'new' : '   '} + ${s}`);
+for (const s of reviews) console.log(`  review ~ ${s}`);
 for (const s of held) console.log(`      - ${s}`);

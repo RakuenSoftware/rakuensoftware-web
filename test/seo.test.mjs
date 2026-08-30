@@ -214,17 +214,25 @@ test('every published article is in the sitemap and serves its own head', async 
     const raw = await readFile(resolve(postsDir, file), 'utf8');
     const slug = frontmatterValue(raw, 'slug') ?? file.slice(0, -3);
     const title = frontmatterValue(raw, 'title');
-
-    assert.match(sitemap, new RegExp(`<loc>[^<]*/blog/${slug}</loc>`), `${slug} missing from sitemap`);
+    const review = frontmatterValue(raw, 'site_status') === 'right-of-reply-review';
 
     const res = await fetch(`${base}/blog/${slug}`);
     assert.equal(res.status, 200, `${slug} should serve`);
     const html = await res.text();
     /* The title is the whole point: this is the text Reddit and LinkedIn show. */
     assert.ok(html.includes(`<title>${title} — Rakuen Software</title>`), `${slug} has the wrong title`);
-    assert.match(html, new RegExp(`rel="canonical" href="[^"]*/blog/${slug}"`), `${slug} canonical`);
     assert.match(html, /property="og:type" content="article"/, `${slug} og:type`);
     assert.match(html, /property="og:description" content="[^"]+"/, `${slug} og:description`);
+
+    if (review) {
+      assert.doesNotMatch(sitemap, new RegExp(`<loc>[^<]*/blog/${slug}</loc>`), `${slug} leaked into sitemap`);
+      assert.match(html, /name="robots" content="noindex"/, `${slug} must be noindex`);
+      assert.doesNotMatch(html, /rel="canonical"/, `${slug} must not claim publication canon`);
+      assert.doesNotMatch(html, /article:published_time/, `${slug} must not claim a publication date`);
+    } else {
+      assert.match(sitemap, new RegExp(`<loc>[^<]*/blog/${slug}</loc>`), `${slug} missing from sitemap`);
+      assert.match(html, new RegExp(`rel="canonical" href="[^"]*/blog/${slug}"`), `${slug} canonical`);
+    }
   }
 });
 

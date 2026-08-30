@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { mkdtempSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -27,7 +27,7 @@ const ARTICLES = [
   'a-fourth-held-article',
 ];
 
-function blog(published) {
+function blog(published, review = []) {
   const dir = mkdtempSync(join(tmpdir(), 'rakuen-blog-'));
   for (const slug of ARTICLES) {
     const articleDir = join(dir, 'articles', slug, 'article');
@@ -40,6 +40,7 @@ function blog(published) {
   if (published !== null) {
     writeFileSync(join(dir, 'articles', 'PUBLISHED'), `${published.join('\n')}\n`);
   }
+  writeFileSync(join(dir, 'articles', 'REVIEW'), `${review.join('\n')}\n`);
   return dir;
 }
 
@@ -98,6 +99,38 @@ test('adding one line publishes one article, and the log names it', async (t) =>
   assert.equal(result.code, 0, result.stderr);
   assert.ok(slugs(posts).includes('a-held-article'));
   assert.match(result.stdout, /new \+ a-held-article/);
+});
+
+test('a review copy is served but is not counted as published', async (t) => {
+  const posts = scratch(t);
+  const result = await sync(blog(LIVE, ['a-held-article']), posts);
+
+  assert.equal(result.code, 0, result.stderr);
+  assert.ok(slugs(posts).includes('a-held-article'));
+  const review = readFileSync(join(posts, 'a-held-article.md'), 'utf8');
+  assert.match(review, /^---\nsite_status: right-of-reply-review\n/);
+  assert.match(result.stdout, /1 in right-of-reply review/);
+  assert.doesNotMatch(result.stdout, /\+ a-held-article/);
+});
+
+test('publishing a review copy keeps its slug and removes the review marker', async (t) => {
+  const posts = scratch(t);
+  await sync(blog(LIVE, ['a-held-article']), posts);
+  const result = await sync(blog([...LIVE, 'a-held-article']), posts);
+
+  assert.equal(result.code, 0, result.stderr);
+  const published = readFileSync(join(posts, 'a-held-article.md'), 'utf8');
+  assert.doesNotMatch(published, /site_status: right-of-reply-review/);
+  assert.match(result.stdout, /new \+ a-held-article/);
+});
+
+test('an article cannot be review-only and published at once', async (t) => {
+  const posts = scratch(t);
+  const result = await sync(blog(LIVE, ['hello-rakuen-software']), posts);
+
+  assert.equal(result.code, 1);
+  assert.match(result.stderr, /both articles\/PUBLISHED and articles\/REVIEW/);
+  assert.deepEqual(slugs(posts), []);
 });
 
 test('a slug that is not a slug is refused rather than cleaned up', async (t) => {
