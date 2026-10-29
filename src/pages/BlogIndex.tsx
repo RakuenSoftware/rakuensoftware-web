@@ -10,7 +10,6 @@ export default function BlogIndex() {
       <Meta {...STATIC_PAGES['/blog']} />
 
       <Hero
-        tone="light"
         title="Blog"
         subtitle="Release notes, design decisions and engineering write-ups."
       />

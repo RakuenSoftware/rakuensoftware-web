@@ -13,7 +13,6 @@ export default function Home() {
       <Meta {...STATIC_PAGES['/']} />
 
       <Hero
-        tone="light"
         title={<>Software you can own.<br /><span className="home-hero__accent">From the runtime down.</span></>}
         subtitle="Persistent AI work, Linux storage and networking, and the independent components underneath them. Run the systems on your hardware. Read the contracts. Keep control of your data."
         actions={
@@ -115,7 +114,6 @@ export default function Home() {
       )}
 
       <CallToAction
-        tone="default"
         title="Build with us. Run it your way."
         description="Read the source, open an issue, or tell us what you are building."
         actions={

@@ -10,7 +10,6 @@ export default function NotFound() {
           the shell itself is a candidate for the index. */}
       <Meta title={pageTitle('Page not found')} noindex />
       <Hero
-        tone="light"
         title="That page doesn’t exist"
         subtitle="The link may be out of date, or the page may have moved."
         actions={<RouterLink href="/"><Button variant="primary">Back to the home page</Button></RouterLink>}

@@ -30,7 +30,6 @@ export default function ProductPage() {
         </nav>
 
         <Hero
-          tone="light"
           title={product.name}
           subtitle={product.summary}
           actions={
@@ -109,7 +108,6 @@ export default function ProductPage() {
 
       {product.repo != null ? (
         <CallToAction
-          tone="default"
           title={`Build with ${product.name}`}
           description="Source, issues and releases are on GitHub."
           actions={
@@ -120,7 +118,6 @@ export default function ProductPage() {
         />
       ) : (
         <CallToAction
-          tone="default"
           title={product.sourcePolicy != null ? `${product.name}: access by arrangement` : `Extend your SmoothNAS`}
           description={product.sourcePolicy != null ? 'Distribution is limited to specific opt-in arrangements and may remain that way indefinitely. Contact us to discuss access.' : 'Explore the application repositories above, or start with the SmoothNAS overview.'}
           actions={product.sourcePolicy != null
