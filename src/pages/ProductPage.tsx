@@ -1,6 +1,5 @@
 import { Navigate, useParams } from 'react-router-dom';
 import {
-  Badge,
   CallToAction,
   FeatureCard,
   FeatureGrid,
@@ -26,6 +25,12 @@ function ProductFacts({ product }: { product: Product }) {
         <div>
           <dt>Part of</dt>
           <dd><RouterLink href={`/#${group.id}`}>{group.title}</RouterLink></dd>
+        </div>
+      )}
+      {product.status != null && (
+        <div>
+          <dt>Status</dt>
+          <dd>{product.status}</dd>
         </div>
       )}
       <div>
@@ -76,7 +81,6 @@ export default function ProductPage() {
         </nav>
 
         <Hero
-          eyebrow={product.status != null ? <Badge label={product.status} variant="neutral" /> : undefined}
           title={product.name}
           subtitle={product.summary}
           media={<ProductFacts product={product} />}
