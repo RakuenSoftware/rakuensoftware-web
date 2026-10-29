@@ -1,7 +1,8 @@
-import { Button, CallToAction, Hero, Section } from '@rakuensoftware/smoothgui';
+import { CallToAction, Hero, Section } from '@rakuensoftware/smoothgui';
 import { PRODUCTS, PRODUCT_GROUPS } from '../content/products';
 import { PUBLISHED_POSTS, formatDate } from '../lib/posts';
 import RouterLink from '../components/RouterLink';
+import ButtonLink from '../components/ButtonLink';
 import Meta from '../components/Meta';
 import { STATIC_PAGES } from '../../lib/site-meta.mjs';
 
@@ -17,10 +18,8 @@ export default function Home() {
         subtitle="Persistent AI work, Linux storage and networking, and the independent components underneath them. Run the systems on your hardware. Read the contracts. Keep control of your data."
         actions={
           <>
-            <a href="#products"><Button variant="primary">Explore the portfolio</Button></a>
-            <a href="https://github.com/RakuenSoftware" target="_blank" rel="noreferrer">
-              <Button variant="ghost">View the source</Button>
-            </a>
+            <ButtonLink href="#products" variant="primary">Explore the projects</ButtonLink>
+            <ButtonLink href="https://github.com/RakuenSoftware" variant="ghost">View the source</ButtonLink>
           </>
         }
       />
@@ -32,13 +31,6 @@ export default function Home() {
           <p><strong>Build in the open</strong><span>Public source, with one deliberate exception.</span></p>
         </div>
       </section>
-
-      <Section title="Committed to public and open source code" width="narrow">
-        <div className="source-commitment">
-          <p>Rakuen Software is deeply committed to public and open source code. We build products and independent components that people can inspect, use and build on.</p>
-          <p><RouterLink href="/products/smoothrouter">SmoothRouter is the sole exception.</RouterLink> As a public-facing security device, the authors regard publishing its code in the current cybersecurity climate as a fundamentally different security proposition. Its source stays private, and distribution is limited to specific opt-in arrangements, potentially indefinitely.</p>
-        </div>
-      </Section>
 
       <div className="home-portfolio">
         <Section id="products" title="Explore the Rakuen projects"
@@ -69,7 +61,7 @@ export default function Home() {
       </div>
 
       <div className="home-operating-model">
-        <Section title="How the pieces fit.">
+        <Section title="How the pieces fit">
           <div className="home-model-grid">
             <article>
               <span>01</span>
@@ -86,6 +78,15 @@ export default function Home() {
               <h3>A platform maintained together</h3>
               <p>SmoothGUI, SmoothISO, SmoothKernel and smoothapt share interface, installation, hardware support and package delivery across the appliances.</p>
             </article>
+          </div>
+        </Section>
+      </div>
+
+      <div className="home-source">
+        <Section title="Committed to public and open source code" width="narrow">
+          <div className="source-commitment">
+            <p>Every product and component here is public source that you can inspect, run and build on.</p>
+            <p><RouterLink href="/products/smoothrouter">SmoothRouter is the one exception.</RouterLink> It is a public-facing security device, and in the current security climate publishing its code is a different proposition. Its source stays private and is available only by opt-in arrangement, possibly indefinitely.</p>
           </div>
         </Section>
       </div>
@@ -118,12 +119,8 @@ export default function Home() {
         description="Read the source, open an issue, or tell us what you are building."
         actions={
           <>
-            <a href="https://github.com/RakuenSoftware" target="_blank" rel="noreferrer">
-              <Button variant="primary">Browse GitHub</Button>
-            </a>
-            <a href="https://discord.gg/FjGjvcgAqz" target="_blank" rel="noreferrer">
-              <Button variant="ghost">Join the Discord</Button>
-            </a>
+            <ButtonLink href="https://github.com/RakuenSoftware" variant="primary">Browse GitHub</ButtonLink>
+            <ButtonLink href="https://discord.gg/FjGjvcgAqz" variant="ghost">Join the Discord</ButtonLink>
           </>
         }
       />

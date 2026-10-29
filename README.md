@@ -261,5 +261,6 @@ Packages, so the build needs no registry credentials:
 
 ```sh
 cd ../smoothgui && npm run build && npm pack --pack-destination ../rakuensoftware-web/vendor
-# then bump the file: dependency in package.json and reinstall
+# then bump the file: dependency in package.json, reinstall,
+# and delete the previous tarball from vendor/
 ```

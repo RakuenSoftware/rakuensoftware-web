@@ -67,7 +67,7 @@ export default function Layout() {
       <SiteFooter
         brand={
           <div className="site-footer-brand">
-            <strong><span aria-hidden="true">R / </span>Rakuen Software</strong>
+            <strong><span className="site-wordmark__mark" aria-hidden="true">R</span>Rakuen Software</strong>
             <p>AI working environments, Linux appliances and independent systems components.</p>
           </div>
         }

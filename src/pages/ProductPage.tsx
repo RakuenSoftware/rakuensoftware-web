@@ -1,7 +1,6 @@
 import { Navigate, useParams } from 'react-router-dom';
 import {
   Badge,
-  Button,
   CallToAction,
   FeatureCard,
   FeatureGrid,
@@ -9,10 +8,57 @@ import {
   Prose,
   Section,
 } from '@rakuensoftware/smoothgui';
-import { productBySlug } from '../content/products';
+import { PRODUCT_GROUPS, productBySlug } from '../content/products';
+import type { Product } from '../content/products';
 import RouterLink from '../components/RouterLink';
+import ButtonLink from '../components/ButtonLink';
 import Meta from '../components/Meta';
 import { productMeta } from '../../lib/site-meta.mjs';
+
+/** The at-a-glance facts beside the hero: where the project sits in the
+ * portfolio, where its source lives and what it connects to. */
+function ProductFacts({ product }: { product: Product }) {
+  const group = PRODUCT_GROUPS.find((g) => g.id === product.group);
+  const related = product.related.map(productBySlug).filter((p): p is Product => p != null);
+  return (
+    <dl className="product-facts">
+      {group != null && (
+        <div>
+          <dt>Part of</dt>
+          <dd><RouterLink href={`/#${group.id}`}>{group.title}</RouterLink></dd>
+        </div>
+      )}
+      <div>
+        <dt>Source</dt>
+        <dd>
+          {product.repo != null
+            ? <a href={product.repo} target="_blank" rel="noreferrer">{product.repo.replace(/^https:\/\//, '')}</a>
+            : product.sourcePolicy != null ? 'Private, by arrangement' : 'Per-application repositories'}
+        </dd>
+      </div>
+      {product.resources.length > 0 && (
+        <div>
+          <dt>Documentation</dt>
+          <dd>
+            {product.resources.map((r, i) => (
+              <span key={r.href}>{i > 0 && ', '}<a href={r.href} target="_blank" rel="noreferrer">{r.label}</a></span>
+            ))}
+          </dd>
+        </div>
+      )}
+      {related.length > 0 && (
+        <div>
+          <dt>Works with</dt>
+          <dd>
+            {related.map((r, i) => (
+              <span key={r.slug}>{i > 0 && ', '}<RouterLink href={`/products/${r.slug}`}>{r.name}</RouterLink></span>
+            ))}
+          </dd>
+        </div>
+      )}
+    </dl>
+  );
+}
 
 export default function ProductPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -21,7 +67,7 @@ export default function ProductPage() {
   if (product == null) return <Navigate to="/404" replace />;
 
   return (
-    <>
+    <div className="product-page">
       <Meta {...productMeta(product)} />
 
       <div className="product-intro">
@@ -33,15 +79,14 @@ export default function ProductPage() {
           eyebrow={product.status != null ? <Badge label={product.status} variant="neutral" /> : undefined}
           title={product.name}
           subtitle={product.summary}
+          media={<ProductFacts product={product} />}
           actions={
             <>
               {product.repo != null && (
-                <a href={product.repo} target="_blank" rel="noreferrer">
-                  <Button variant="primary">View on GitHub</Button>
-                </a>
+                <ButtonLink href={product.repo} variant="primary">View on GitHub</ButtonLink>
               )}
               {product.repo == null && product.resources.length > 0 && (
-                <a href="#documentation"><Button variant="primary">Browse packages</Button></a>
+                <ButtonLink href="#documentation" variant="primary">Browse packages</ButtonLink>
               )}
             </>
           }
@@ -111,9 +156,7 @@ export default function ProductPage() {
           title={`Build with ${product.name}`}
           description="Source, issues and releases are on GitHub."
           actions={
-            <a href={product.repo} target="_blank" rel="noreferrer">
-              <Button variant="primary">Open the repository</Button>
-            </a>
+            <ButtonLink href={product.repo} variant="primary">Open the repository</ButtonLink>
           }
         />
       ) : (
@@ -121,10 +164,10 @@ export default function ProductPage() {
           title={product.sourcePolicy != null ? `${product.name}: access by arrangement` : `Extend your SmoothNAS`}
           description={product.sourcePolicy != null ? 'Distribution is limited to specific opt-in arrangements and may remain that way indefinitely. Contact us to discuss access.' : 'Explore the application repositories above, or start with the SmoothNAS overview.'}
           actions={product.sourcePolicy != null
-            ? <a href="https://discord.gg/FjGjvcgAqz" target="_blank" rel="noreferrer"><Button variant="primary">Contact the community</Button></a>
-            : <RouterLink href="/products/smoothnas"><Button variant="primary">Explore SmoothNAS</Button></RouterLink>}
+            ? <ButtonLink href="https://discord.gg/FjGjvcgAqz" variant="primary">Contact the community</ButtonLink>
+            : <ButtonLink href="/products/smoothnas" variant="primary">Explore SmoothNAS</ButtonLink>}
         />
       )}
-    </>
+    </div>
   );
 }
