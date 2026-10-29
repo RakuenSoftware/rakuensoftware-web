@@ -91,17 +91,8 @@ else
   fi
 fi
 
-echo '==> Pulling articles'
-node scripts/sync-articles.mjs
-
-echo '==> Type checking and building'
-# Do not rewrite the tracked tsconfig.tsbuildinfo on the production checkout.
-npx tsc --noEmit --incremental false
-rm -rf dist.new
-npx vite build --outDir dist.new --emptyOutDir
-
-echo '==> Testing the candidate bundle'
-SITE_DIST_DIR="$REPO/dist.new" npm test
+# The same gate CI runs on pull requests.
+scripts/verify.sh
 
 # Keep the checked-in web service definition authoritative.
 if ! cmp -s scripts/rakuen-web.service "$SYSTEMD_DIR/$SERVICE"; then

@@ -466,12 +466,6 @@
 /* Keep the breadcrumb in the same dark band and content column as the hero. */
 .product-intro { background: var(--sg-dark-surface); }
 .product-intro .sg-hero { padding-top: 28px; }
-/* Status uses the shared neutral badge, sized independently of the action row. */
-.product-intro .sg-hero__eyebrow .sg-badge {
-  background: var(--sg-dark-surface-alt);
-  border-color: var(--sg-dark-border);
-  color: var(--sg-on-dark-muted);
-}
 .product-breadcrumb { max-width: calc(var(--sg-content-max) + 48px); margin: 0 auto; padding: 24px 24px 0; color: var(--sg-on-dark-muted); font-size: 13px; }
 .product-breadcrumb a { color: var(--sg-on-dark-muted); text-decoration: none; }
 .product-breadcrumb a:hover { color: var(--sg-on-dark); text-decoration: underline; }

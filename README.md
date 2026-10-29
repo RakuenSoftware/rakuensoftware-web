@@ -132,7 +132,9 @@ Every deployment holds the same `.publish.lock`, including manual runs, so
 publishers cannot overlap. The script installs locked dependencies when needed,
 syncs articles, type-checks without rewriting the tracked TypeScript build info,
 builds into `dist.new`, and runs the tests against that candidate using
-`SITE_DIST_DIR`. Only then does it swap the bundle, restart the web service and
+`SITE_DIST_DIR`. Those steps live in `scripts/verify.sh`, which the `verify`
+GitHub Actions check also runs on every pull request; `main` requires that check,
+so a change the deploy would roll back cannot merge. Only then does it swap the bundle, restart the web service and
 check its asset and health endpoints. On failure it restores the prior checkout,
 dependencies, bundle and service definition. Failed attempts leave the success
 markers unchanged and are retried on the next timer tick.
