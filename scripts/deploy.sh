@@ -1,117 +1,145 @@
 #!/usr/bin/env bash
-#
-# Deploy rakuensoftware.com.
-#
-# Runs on the VPS that rakuensoftware.com resolves to, where this repo is checked
-# out at /opt/rakuen-web and served by the rakuen-web.service unit:
-#
-#     ExecStart=/usr/bin/node /opt/rakuen-web/server.mjs
-#
-# nginx on that same host terminates TLS and forwards to :3000. There is no CI.
-#
-# This header used to describe a Proxmox container in the homelab, reached with
-# `pct exec 107` through the hypervisor. The site moved and the comment did not,
-# so it sent people to a container that does not exist. Nothing below ever
-# depended on it: every command here is local to whatever host it runs on.
-#
-# This deploys CODE. Articles do not need it: publishing is a line in
-# rakuen-blog's articles/PUBLISHED, and the autopublish timer beside this script
-# picks that up within a few minutes and runs the article path below on its own.
-# Reach for this when the site's own source has changed.
-#
-# What it does: fast-forward the checkout to origin/main, install deps only if
-# the lockfile moved, pull the articles, build into a scratch dir, swap it into
-# place atomically, restart the server, and verify the new bundle is being
-# served — rolling back to the previous dist if the check fails, so a broken
-# build never goes live.
-#
-# Deliberate tradeoff: this repo does not pin an article revision. It is a
-# renderer over rakuen-blog main, so a deploy publishes whatever that branch says
-# at the moment it runs. Two consequences worth knowing before you are surprised
-# by them. Redeploying an older commit of THIS repo does not restore the article
-# text that was live then, only the code. And the rollback below restores the
-# previous dist, which is a real rollback, but redeploying after it will pull
-# current articles again. If you need an exact past state, check out the article
-# revision you want in a local clone and build with BLOG_LOCAL pointed at it.
-#
-# Usage (on the VPS):  /opt/rakuen-web/scripts/deploy.sh
-# Usage (over ssh):    ssh root@<vps> '/opt/rakuen-web/scripts/deploy.sh'
-
+# Deploy main on the website host. autopublish.sh calls this after a branch move;
+# it can also be run manually. Articles-only rebuilds retain the current code.
+# All publishers share one lock. A failed attempt restores the previous code,
+# dependencies and bundle, and leaves the successful-deployment marker unchanged.
 set -euo pipefail
 
-REPO=/opt/rakuen-web
-BRANCH=main
-PORT=3000
-SERVICE=rakuen-web.service
-
+REPO=${REPO:-/opt/rakuen-web}
+PORT=${PORT:-3000}
+SERVICE=${SERVICE:-rakuen-web.service}
+SYSTEMD_DIR=${SYSTEMD_DIR:-/etc/systemd/system}
 cd "$REPO"
-old_rev=$(git rev-parse --short HEAD)
+
+exec 9> .publish.lock
+flock 9
+
+old_rev=$(git rev-parse HEAD)
 new_rev=$old_rev
+code_changed=0
+deps_changed=0
+previous_bundle=0
+swapped=0
+unit_changed=0
+unit_existed=0
+unit_backup=''
 
-# ARTICLES_ONLY=1 rebuilds from the current checkout without moving it. The
-# autopublish timer uses it, so a new article never drags along whatever code
-# happens to be sitting on main. Code changes stay a deliberate deploy.
-if [ "${ARTICLES_ONLY:-0}" = "1" ]; then
-  echo "==> Articles only, leaving the checkout at $(git rev-parse --short HEAD)"
-else
-  if [ -n "$(git status --porcelain)" ]; then
-    echo "refusing to deploy: working tree at $REPO has local changes" >&2
-    git status --short >&2
-    exit 1
+rollback() {
+  result=$?
+  trap - EXIT
+  set +e
+  if [ "$result" -ne 0 ]; then
+    echo "!! Deployment failed; restoring $old_rev" >&2
+    if [ "$swapped" = 1 ]; then rm -rf dist; fi
+    if [ "$previous_bundle" = 1 ]; then mv dist.prev dist; fi
+    if [ "$code_changed" = 1 ]; then
+      git reset --hard --quiet "$old_rev" || echo '!! Could not restore checkout' >&2
+    fi
+    if [ "$deps_changed" = 1 ]; then
+      npm ci --no-audit --no-fund || echo '!! Could not restore dependencies' >&2
+    fi
+    if [ "$unit_changed" = 1 ]; then
+      if [ "$unit_existed" = 1 ]; then
+        cp "$unit_backup" "$SYSTEMD_DIR/$SERVICE"
+      else
+        rm -f "$SYSTEMD_DIR/$SERVICE"
+      fi
+      systemctl daemon-reload
+    fi
+    if [ "$swapped" = 1 ]; then
+      systemctl restart "$SERVICE" || echo '!! Could not restart the previous server' >&2
+    fi
   fi
+  rm -rf dist.new
+  if [ -n "$unit_backup" ]; then rm -f "$unit_backup"; fi
+  exit "$result"
+}
+trap rollback EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
-  echo "==> Syncing $BRANCH"
-  git fetch --quiet origin "$BRANCH"
-  git reset --hard --quiet "origin/$BRANCH"
-  new_rev=$(git rev-parse --short HEAD)
-  echo "    $old_rev -> $new_rev"
-
-  # node_modules and the vendored smoothgui tarball are already present; only pay
-  # for a reinstall when the lockfile actually changed between the two revisions.
-  if ! git diff --quiet "$old_rev" "$new_rev" -- package-lock.json; then
-    echo "==> package-lock.json changed, running npm ci"
-    npm ci --no-audit --no-fund
-  else
-    echo "==> Dependencies unchanged, skipping install"
-  fi
-fi
-
-echo "==> Pulling articles"
-node scripts/sync-articles.mjs
-
-echo "==> Building"
-rm -rf dist.new
-npx vite build --outDir dist.new --emptyOutDir >/dev/null
-
-echo "==> Swapping dist into place"
-rm -rf dist.prev
-[ -d dist ] && mv dist dist.prev
-mv dist.new dist
-
-# Keep the checked-in service definition authoritative. Besides serving the
-# public bundle, it starts the private analytics dashboard on its own port.
-if ! cmp -s scripts/rakuen-web.service /etc/systemd/system/rakuen-web.service; then
-  install -m 0644 scripts/rakuen-web.service /etc/systemd/system/rakuen-web.service
-  systemctl daemon-reload
-fi
-systemctl restart "$SERVICE"
-
-echo "==> Verifying"
-asset=$(grep -oE 'assets/index-[^"]+\.js' dist/index.html | head -1)
-ok=""
-for _ in 1 2 3 4 5; do
-  sleep 1
-  if curl -fsS "http://127.0.0.1:$PORT/$asset" -o /dev/null \
-    && curl -fsS "http://127.0.0.1:$PORT/__analytics/health" -o /dev/null; then ok=1; break; fi
-done
-
-if [ -n "$ok" ]; then
-  echo "==> Live: $asset (commit $new_rev)"
-  rm -rf dist.prev
-else
-  echo "!!  Verification failed for $asset — rolling back to $old_rev" >&2
-  rm -rf dist
-  mv dist.prev dist
-  systemctl restart "$SERVICE"
+if [ -n "$(git status --porcelain)" ]; then
+  echo "refusing to deploy: working tree at $REPO has local changes" >&2
+  git status --short >&2
   exit 1
 fi
+
+if [ "${ARTICLES_ONLY:-0}" = 1 ]; then
+  if [ "$(cat .last-site-sha 2>/dev/null || echo none)" != "$old_rev" ]; then
+    echo 'refusing article rebuild: checkout differs from the last verified deployment' >&2
+    exit 1
+  fi
+  echo "==> Articles only, leaving the checkout at $old_rev"
+else
+  echo '==> Syncing main'
+  git fetch --quiet origin main
+  new_rev=$(git rev-parse origin/main)
+  if [ "$new_rev" != "$old_rev" ]; then
+    if ! git diff --quiet "$old_rev" "$new_rev" -- package-lock.json; then
+      deps_changed=1
+    fi
+    code_changed=1
+    git reset --hard --quiet "$new_rev"
+  fi
+  echo "    $old_rev -> $new_rev"
+  last_live=$(cat .last-site-sha 2>/dev/null || echo none)
+  if [ "$deps_changed" = 1 ] || [ ! -d node_modules ] || [ "$last_live" != "$new_rev" ]; then
+    # A partial install must be repaired on rollback as well.
+    deps_changed=1
+    echo '==> Installing locked dependencies'
+    npm ci --no-audit --no-fund
+  fi
+fi
+
+echo '==> Pulling articles'
+node scripts/sync-articles.mjs
+
+echo '==> Type checking and building'
+# Do not rewrite the tracked tsconfig.tsbuildinfo on the production checkout.
+npx tsc --noEmit --incremental false
+rm -rf dist.new
+npx vite build --outDir dist.new --emptyOutDir
+
+echo '==> Testing the candidate bundle'
+SITE_DIST_DIR="$REPO/dist.new" npm test
+
+# Keep the checked-in web service definition authoritative.
+if ! cmp -s scripts/rakuen-web.service "$SYSTEMD_DIR/$SERVICE"; then
+  unit_backup=$(mktemp)
+  if [ -f "$SYSTEMD_DIR/$SERVICE" ]; then
+    cp "$SYSTEMD_DIR/$SERVICE" "$unit_backup"
+    unit_existed=1
+  fi
+  unit_changed=1
+  install -m 0644 scripts/rakuen-web.service "$SYSTEMD_DIR/$SERVICE"
+  systemctl daemon-reload
+fi
+
+echo '==> Swapping dist into place'
+rm -rf dist.prev
+if [ -d dist ]; then mv dist dist.prev; previous_bundle=1; fi
+mv dist.new dist
+swapped=1
+systemctl restart "$SERVICE"
+
+echo '==> Verifying'
+asset=$(grep -oE 'assets/index-[^"]+\.js' dist/index.html | head -1)
+ok=''
+for _ in 1 2 3 4 5; do
+  if curl -fsS --connect-timeout 3 --max-time 10 "http://127.0.0.1:$PORT/$asset" -o /dev/null \
+    && curl -fsS --connect-timeout 3 --max-time 10 "http://127.0.0.1:$PORT/__analytics/health" -o /dev/null; then ok=1; break; fi
+  sleep 1
+done
+if [ -z "$ok" ]; then
+  echo "!! Verification failed for $asset" >&2
+  exit 1
+fi
+
+# HEAD alone is not evidence that its build reached production. Only publish a
+# marker after validation, service restart and HTTP checks have all succeeded.
+printf '%s\n' "$new_rev" > .last-site-sha.tmp
+mv .last-site-sha.tmp .last-site-sha
+trap - EXIT
+if [ -n "$unit_backup" ]; then rm -f "$unit_backup"; fi
+rm -rf dist.prev
+echo "==> Live: $asset (commit $new_rev)"

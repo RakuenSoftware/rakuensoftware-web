@@ -25,7 +25,7 @@ import {
  * that route's identity.
  */
 const root = fileURLToPath(new URL('..', import.meta.url));
-const distDir = resolve(root, 'dist');
+const distDir = resolve(process.env.SITE_DIST_DIR ?? resolve(root, 'dist'));
 const postsDir = resolve(root, 'src/content/posts');
 
 function listen(handler) {

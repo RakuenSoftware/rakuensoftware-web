@@ -117,22 +117,52 @@ one and the tag belongs in `headTags()` in `lib/site-meta.mjs`.
 
 ## Deploy
 
-There is no CI. Deploying **code** is: merge to `main`, then run the deploy
-script on the host. It fast-forwards the checkout to `origin/main`, rebuilds,
-swaps `dist/` in atomically, restarts the server, and rolls back if the new
-bundle fails to serve:
+After activation, merging website changes to `main` publishes them automatically
+on the existing `rakuen-autopublish.timer`, normally within three minutes
+(plus build time and the timer's 30-second accuracy window). The host polls
+`origin/main` and `rakuen-blog` over their existing Git connections; no inbound
+webhook, GitHub Actions deployment key, or new service credential is needed.
+
+The watcher compares the remote website revision with `.last-site-sha`, the
+last **verified deployment**, rather than the checkout's HEAD. Website changes
+run a full deploy; blog-only changes rebuild the deployed code. When both move,
+one full deploy includes both. An unchanged pair does nothing.
+
+Every deployment holds the same `.publish.lock`, including manual runs, so
+publishers cannot overlap. The script installs locked dependencies when needed,
+syncs articles, type-checks without rewriting the tracked TypeScript build info,
+builds into `dist.new`, and runs the tests against that candidate using
+`SITE_DIST_DIR`. Only then does it swap the bundle, restart the web service and
+check its asset and health endpoints. On failure it restores the prior checkout,
+dependencies, bundle and service definition. Failed attempts leave the success
+markers unchanged and are retried on the next timer tick.
+
+### One-time activation or upgrade from article-only publishing
+
+An older article-only watcher cannot fetch its own code update. After approving
+and merging this change, explicitly deploy it once on the VPS, then install the
+updated timer definitions. These commands change production and should only be
+run when the deployment is approved:
 
 ```sh
-# on the VPS:
 /opt/rakuen-web/scripts/deploy.sh
-# or over ssh, as root on that host:
-ssh root@<vps> '/opt/rakuen-web/scripts/deploy.sh'
+install -m 0644 /opt/rakuen-web/scripts/rakuen-autopublish.service /etc/systemd/system/
+install -m 0644 /opt/rakuen-web/scripts/rakuen-autopublish.timer /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now rakuen-autopublish.timer
 ```
 
-It prints `Live: <bundle> (commit <sha>)`. That sha is the confirmation; a merge
-on its own moves nothing.
+Subsequent merges to `main` need no manual deployment. For an intentional manual
+redeploy, run `/opt/rakuen-web/scripts/deploy.sh`; it uses the same lock and checks.
+It prints `Live: <bundle> (commit <full sha>)` after verification. Inspect failures
+with `journalctl -u rakuen-autopublish.service`, and stop automatic publishing with
+`systemctl disable --now rakuen-autopublish.timer`.
 
-**Articles do not need any of that.** They publish themselves; see below.
+Articles still publish through `rakuen-blog`'s manifest and existing sync guards.
+Deployments pull that repository's current main; rolling website code back does
+not pin or roll article content back. A manual rollback must also be accompanied
+by stopping the publishing timer or reverting `main`, otherwise the next tick
+will redeploy the current branch.
 
 ## Content
 

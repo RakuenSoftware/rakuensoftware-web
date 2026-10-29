@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { SiteFooter, SiteHeader, ThemeToggle } from '@rakuensoftware/smoothgui';
-import type { SiteFooterGroup, SiteNavItem } from '@rakuensoftware/smoothgui';
+import { SiteFooter, SiteHeader, THEME_STORAGE_KEY, activeTheme, applyTheme, clearStoredTheme, storeTheme, storedTheme, systemTheme } from '@rakuensoftware/smoothgui';
+import type { SiteFooterGroup, SiteNavItem, Theme, ThemeDefault } from '@rakuensoftware/smoothgui';
 import { PRODUCTS, PRODUCT_GROUPS } from '../content/products';
 import RouterLink from './RouterLink';
+import ThemeControl from './ThemeControl';
 import { trackPageView } from '../lib/analytics';
 
 const NAV_ITEMS: SiteNavItem[] = [
@@ -31,6 +32,35 @@ const FOOTER_GROUPS: SiteFooterGroup[] = [
 
 export default function Layout() {
   const { pathname, hash, search } = useLocation();
+  const [mode, setMode] = useState<ThemeDefault>(() => storedTheme() ?? 'system');
+  const [theme, setTheme] = useState<Theme>(() => activeTheme());
+
+  function chooseTheme(next: ThemeDefault) {
+    if (next === 'system') clearStoredTheme();
+    else storeTheme(next);
+    setMode(next);
+    setTheme(next === 'system' ? systemTheme() : next);
+  }
+
+  useEffect(() => { applyTheme(theme); }, [theme]);
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const syncSystem = () => { if (mode === 'system') setTheme(systemTheme()); };
+    media.addEventListener('change', syncSystem);
+    return () => media.removeEventListener('change', syncSystem);
+  }, [mode]);
+
+  useEffect(() => {
+    const syncStorage = (event: StorageEvent) => {
+      if (event.key != null && event.key !== THEME_STORAGE_KEY) return;
+      const stored = storedTheme();
+      setMode(stored ?? 'system');
+      setTheme(stored ?? systemTheme());
+    };
+    window.addEventListener('storage', syncStorage);
+    return () => window.removeEventListener('storage', syncStorage);
+  }, []);
 
   useEffect(() => {
     trackPageView(`${pathname}${search}`);
@@ -58,7 +88,7 @@ export default function Layout() {
         }
         items={NAV_ITEMS}
         activeHref={pathname.startsWith('/blog') ? '/blog' : pathname.startsWith('/products/') ? '/#products' : undefined}
-        actions={<ThemeToggle />}
+        actions={<ThemeControl mode={mode} onChange={chooseTheme} />}
         linkComponent={RouterLink}
       />
       <main id="main-content" tabIndex={-1}>

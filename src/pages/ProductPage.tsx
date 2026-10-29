@@ -24,27 +24,29 @@ export default function ProductPage() {
     <>
       <Meta {...productMeta(product)} />
 
-      <nav className="product-breadcrumb" aria-label="Breadcrumb">
-        <RouterLink href="/#products">All projects</RouterLink><span aria-hidden="true"> / </span><span>{product.name}</span>
-      </nav>
+      <div className="product-intro">
+        <nav className="product-breadcrumb" aria-label="Breadcrumb">
+          <RouterLink href="/#products">All projects</RouterLink><span aria-hidden="true"> / </span><span aria-current="page">{product.name}</span>
+        </nav>
 
-      <Hero
-        title={product.name}
-        subtitle={product.summary}
-        actions={
-          <>
-            {product.status != null && <Badge label={product.status} variant="info" />}
-            {product.repo != null && (
-              <a href={product.repo} target="_blank" rel="noreferrer">
-                <Button variant="primary">View on GitHub</Button>
-              </a>
-            )}
-            {product.repo == null && product.resources.length > 0 && (
-              <a href="#documentation"><Button variant="primary">Browse packages</Button></a>
-            )}
-          </>
-        }
-      />
+        <Hero
+          title={product.name}
+          subtitle={product.summary}
+          actions={
+            <>
+              {product.status != null && <Badge label={product.status} variant="info" />}
+              {product.repo != null && (
+                <a href={product.repo} target="_blank" rel="noreferrer">
+                  <Button variant="primary">View on GitHub</Button>
+                </a>
+              )}
+              {product.repo == null && product.resources.length > 0 && (
+                <a href="#documentation"><Button variant="primary">Browse packages</Button></a>
+              )}
+            </>
+          }
+        />
+      </div>
 
       {product.sourcePolicy != null && (
         <Section title="Why the source stays private" width="narrow" tone="muted">
