@@ -14,7 +14,7 @@ export default function BlogPost() {
   const byline = [formatDate(post.date), post.author].filter((v) => v != null).join(' · ');
 
   return (
-    <>
+    <div className="blog-post">
       <Meta
         {...postMeta(post)}
         type="article"
@@ -49,6 +49,6 @@ export default function BlogPost() {
           <RouterLink href="/blog">← Back to all posts</RouterLink>
         </p>
       </Section>
-    </>
+    </div>
   );
 }

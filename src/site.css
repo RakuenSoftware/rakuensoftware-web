@@ -35,6 +35,19 @@
   margin-top: 12px;
 }
 
+/* Article titles are sentences, not slogans: keep them to two or three lines,
+ * on the same column as the article text. */
+.blog-post .sg-hero__inner { max-width: var(--sg-content-narrow); }
+.blog-post .sg-hero__title {
+  max-width: 26ch;
+  font-size: clamp(34px, 4.2vw, 50px);
+  line-height: 1.08;
+}
+
+@media (max-width: 860px) {
+  .blog-post .sg-hero__title { font-size: clamp(28px, 8vw, 36px); }
+}
+
 /* Home: a portfolio, not a sequence of generic feature grids. */
 .home-page .sg-hero {
   padding-top: 60px;
@@ -501,6 +514,11 @@
 @media (max-width: 860px) {
   .sg-siteheader__actions { display: flex; margin-left: auto; }
   .sg-siteheader__toggle { margin-left: 0; }
+}
+/* Mobile menu links line up with the wordmark and get a phone-sized label. */
+.sg-siteheader__mobile .sg-siteheader__link {
+  padding: 12px 0;
+  font-size: 15px;
 }
 
 /* Header controls: icon buttons without a box. The shared styles outline both
