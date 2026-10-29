@@ -85,8 +85,8 @@ export default function Home() {
       <div className="home-source">
         <Section title="Committed to public and open source code" width="narrow">
           <div className="source-commitment">
-            <p>Rakuen Software is deeply committed to public and open source code. We build products and independent components that people can inspect, use and build on.</p>
-            <p><RouterLink href="/products/smoothrouter">SmoothRouter is the sole exception.</RouterLink> As a public-facing security device, the authors regard publishing its code in the current cybersecurity climate as a fundamentally different security proposition. Its source stays private, and distribution is limited to specific opt-in arrangements, potentially indefinitely.</p>
+            <p>Every product and component here is public source that you can inspect, run and build on.</p>
+            <p><RouterLink href="/products/smoothrouter">SmoothRouter is the one exception.</RouterLink> It is a public-facing security device, and in the current security climate publishing its code is a different proposition. Its source stays private and is available only by opt-in arrangement, possibly indefinitely.</p>
           </div>
         </Section>
       </div>
