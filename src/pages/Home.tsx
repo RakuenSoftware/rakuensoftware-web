@@ -28,7 +28,7 @@ export default function Home() {
         <div className="home-principles__inner">
           <p><strong>Keep the state</strong><span>AI memory, storage pools and network settings stay on your machines.</span></p>
           <p><strong>Reach the tools</strong><span>The Linux tools under every interface stay usable from a shell.</span></p>
-          <p><strong>Read the source</strong><span>Public for every project except SmoothRouter.</span></p>
+          <p><strong>Read the source</strong><span>AGPL-3.0 for every project except SmoothRouter.</span></p>
         </div>
       </section>
 
@@ -61,9 +61,9 @@ export default function Home() {
       </div>
 
       <div className="home-source">
-        <Section title="Public source, with one exception" width="narrow">
+        <Section title="Open source, with one exception" width="narrow">
           <div className="source-commitment">
-            <p>Every project here except SmoothRouter publishes its source on GitHub. Aimee, SmoothNAS, ouroboros-ring and smoothapt are licensed under the AGPL-3.0, and SmoothFS under the GPL-2.0. The other repositories are public but do not carry a license yet, so check each one before you build on it.</p>
+            <p>Every project here except SmoothRouter is open source under the AGPL-3.0. Code that runs inside the Linux kernel cannot be AGPL, so the SmoothFS kernel module is GPL-2.0-or-later, and SmoothKernel's configs and patches keep the kernel's GPL-2.0.</p>
             <p><RouterLink href="/products/smoothrouter">SmoothRouter is the exception.</RouterLink> It faces the internet and guards the network behind it, and we are not convinced publishing its source is wise. The source is private for now and may never be released. Access is by opt-in arrangement.</p>
           </div>
         </Section>

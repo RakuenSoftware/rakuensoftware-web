@@ -9,7 +9,7 @@ export interface Product {
   tagline: string;
   summary: string;
   repo?: string;
-  /** SPDX identifier of the license in the repository, when it carries one. */
+  /** The repository license, with any part licensed differently named after it. */
   license?: string;
   status?: string;
   sourcePolicy?: string;
@@ -211,7 +211,7 @@ export const PRODUCTS: Product[] = [
     ],
     "resources": [],
     "status": "Limited opt-in",
-    "sourcePolicy": "We publish the source of everything else we build. SmoothRouter faces the internet and guards everything behind it. Publishing its source changes the security calculation for every network that runs it, and given recent privacy and security concerns we are not convinced a public release is wise. The source is private for now, and it may never be released. Access is by opt-in arrangement, and its repository and package archive require authorization."
+    "sourcePolicy": "Everything else we build is open source. SmoothRouter faces the internet and guards everything behind it. Publishing its source changes the security calculation for every network that runs it, and given recent privacy and security concerns we are not convinced a public release is wise. The source is private for now, and it may never be released. Access is by opt-in arrangement, and its repository and package archive require authorization."
   },
   {
     "slug": "ouroboros-ring",
@@ -350,7 +350,7 @@ export const PRODUCTS: Product[] = [
       }
     ],
     "repo": "https://github.com/RakuenSoftware/smoothfs",
-    "license": "GPL-2.0"
+    "license": "AGPL-3.0; kernel module GPL-2.0-or-later"
   },
   {
     "slug": "nonraid",
@@ -391,7 +391,8 @@ export const PRODUCTS: Product[] = [
         "href": "https://github.com/RakuenSoftware/nonraid/blob/main/README.md"
       }
     ],
-    "repo": "https://github.com/RakuenSoftware/nonraid"
+    "repo": "https://github.com/RakuenSoftware/nonraid",
+    "license": "AGPL-3.0"
   },
   {
     "slug": "smoothgui",
@@ -445,7 +446,8 @@ export const PRODUCTS: Product[] = [
         "href": "https://github.com/RakuenSoftware/smoothgui/blob/main/package.json"
       }
     ],
-    "repo": "https://github.com/RakuenSoftware/smoothgui"
+    "repo": "https://github.com/RakuenSoftware/smoothgui",
+    "license": "AGPL-3.0"
   },
   {
     "slug": "smoothiso",
@@ -504,7 +506,8 @@ export const PRODUCTS: Product[] = [
         "href": "https://github.com/RakuenSoftware/smoothiso/blob/main/installer.sh"
       }
     ],
-    "repo": "https://github.com/RakuenSoftware/smoothiso"
+    "repo": "https://github.com/RakuenSoftware/smoothiso",
+    "license": "AGPL-3.0"
   },
   {
     "slug": "smoothkernel",
@@ -558,7 +561,8 @@ export const PRODUCTS: Product[] = [
         "href": "https://github.com/RakuenSoftware/smoothkernel/blob/main/README.md"
       }
     ],
-    "repo": "https://github.com/RakuenSoftware/smoothkernel"
+    "repo": "https://github.com/RakuenSoftware/smoothkernel",
+    "license": "AGPL-3.0; kernel configs and patches GPL-2.0"
   },
   {
     "slug": "smoothapt",
@@ -657,12 +661,13 @@ export const PRODUCTS: Product[] = [
         "label": "Wolf packages",
         "href": "https://github.com/RakuenSoftware/smoothnas-plugin-wolf"
       }
-    ]
+    ],
+    "license": "AGPL-3.0"
   }
 ];
 
 /** The source label for a project card: licensed source is open source; source
- * that is public but carries no license yet is only public. */
+ * that is public without a license would only be public. */
 export function sourceLabel(product: Product): string {
   return product.license != null ? 'Open source' : 'Public source';
 }
