@@ -1,5 +1,7 @@
 node_modules/
 dist/
+dist.new/
+dist.prev/
 data/
 *.local
 .DS_Store
@@ -9,9 +11,13 @@ data/
 src/content/posts/
 .blog-cache/
 
-# Written by autopublish.sh. Must be ignored, or it makes the checkout dirty
+# Publishing state must be ignored, or it makes the checkout dirty
 # and deploy.sh refuses to run.
 .last-blog-sha
+.last-blog-sha.tmp
+.last-site-sha
+.last-site-sha.tmp
+.publish.lock
 
 # Agent working directories
 .aimee/

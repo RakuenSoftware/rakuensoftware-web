@@ -1,9 +1,8 @@
 [Unit]
-Description=Check rakuen-blog for new articles every few minutes
+Description=Check website main and rakuen-blog for publication changes
 
 [Timer]
-# Three minutes is well inside the noise of writing an article, and the check
-# itself is one ls-remote against a public repository.
+# Poll both main branches without adding an inbound webhook or deployment key.
 OnBootSec=2min
 OnUnitActiveSec=3min
 AccuracySec=30s

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { addressInCidr, buildSummary, createEventStore, normalizeEvent } from './lib/analytics.mjs';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
-const distDir = resolve(root, 'dist');
+const distDir = resolve(process.env.SITE_DIST_DIR ?? resolve(root, 'dist'));
 const dashboardFile = resolve(root, 'analytics/index.html');
 const dataFile = resolve(process.env.ANALYTICS_DATA_DIR ?? resolve(root, 'data'), 'pageviews.jsonl');
 const publicPort = Number(process.env.PORT ?? 3000);
