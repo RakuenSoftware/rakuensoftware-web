@@ -6,21 +6,20 @@
     <title>Rakuen Software</title>
     <meta
       name="description"
-      content="Linux storage, routing and AI tooling. SmoothNAS, SmoothFS, SmoothRouter, nonraid, aimee and the Smooth* platform, built on tools you already run."
+      content="AI working environments, Linux appliances and independent systems components. Explore aimee, ouroboros-ring and the Smooth platform."
     />
     <script>
-      // Applies the theme before first paint so visitors never see a theme
-      // flash. Mirrors activeTheme() in src/lib/theme.ts — keep both in step,
-      // including the storage key.
+      // Same first-paint contract as SmoothGUI's themePreloadScript().
       (function () {
-        var stored = null;
         try {
-          stored = localStorage.getItem('rakuen-theme');
-        } catch (e) {
-          /* storage blocked: fall through to the dark default */
-        }
-        var dark = stored !== 'light';
-        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+          var theme = localStorage.getItem('sg-theme');
+          var previous = localStorage.getItem('rakuen-theme');
+          if (theme !== 'light' && theme !== 'dark' && (previous === 'light' || previous === 'dark')) {
+            theme = previous;
+            localStorage.setItem('sg-theme', theme);
+          }
+          if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+        } catch (e) { /* The OS preference still works when storage is blocked. */ }
       })();
     </script>
   </head>

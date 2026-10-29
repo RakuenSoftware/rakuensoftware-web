@@ -1,6 +1,5 @@
-/* The app is TypeScript and lib/ is plain ESM. Hand-written for the same reason
- * as cloud-host.d.mts: a build step to generate this would be the larger moving
- * part. Only the members the app itself uses are declared. */
+/* The app is TypeScript and lib/ is plain ESM. Only the members the app uses
+ * are declared here. */
 export interface PageMeta {
   title: string;
   description: string;

@@ -241,9 +241,8 @@ test('the pages that are not articles serve their own head too', async (context)
   const base = await withSite(context);
 
   for (const [path, expected] of [
-    ['/', 'Rakuen Software — Linux storage, routing and AI tooling'],
+    ['/', 'Rakuen Software — AI runtimes, Linux appliances and systems libraries'],
     ['/blog', 'Blog — Rakuen Software'],
-    ['/cloud', 'aimee cloud — Rakuen Software'],
     ['/products/smoothnas', 'SmoothNAS — Rakuen Software'],
   ]) {
     const html = await (await fetch(`${base}${path}`)).text();
@@ -251,29 +250,39 @@ test('the pages that are not articles serve their own head too', async (context)
   }
 });
 
-test('the index route follows the hostname aimee cloud is served on', async (context) => {
+test('legacy service hosts now serve the company home instead of cloud signup', async (context) => {
   if (needsBuild(context)) return;
   const site = await listen(servePublic);
   context.after(() => site.close());
-  const port = site.address().port;
+  for (const host of ['aimee.rakuensoftware.com', 'aimee.rakuensoft.com', 'rakuensoftware.com']) {
+    const response = await getWithHost(site.address().port, '/', host);
+    assert.equal(response.status, 200);
+    assert.ok(response.body.includes('<title>Rakuen Software — AI runtimes, Linux appliances and systems libraries</title>'));
+    assert.doesNotMatch(response.body, /aimee cloud/);
+  }
+});
 
-  /* Same build, same "/" path, different site. Without this every share of
-   * https://aimee.rakuensoftware.com/ previews as the company home page. */
-  const cloud = await getWithHost(port, '/', 'aimee.rakuensoftware.com');
-  assert.ok(cloud.body.includes('<title>aimee cloud — Rakuen Software</title>'));
-  /* One page on two addresses: the canonical stays on the indexed one. */
-  assert.match(cloud.body, /rel="canonical" href="https:\/\/rakuensoftware\.com\/cloud"/);
-
-  const main = await getWithHost(port, '/', 'rakuensoftware.com');
-  assert.ok(
-    main.body.includes('<title>Rakuen Software — Linux storage, routing and AI tooling</title>'),
-  );
-
-  /* A hostname that merely contains "aimee" is not us. */
-  const other = await getWithHost(port, '/', 'notaimee.example.com');
-  assert.ok(
-    other.body.includes('<title>Rakuen Software — Linux storage, routing and AI tooling</title>'),
-  );
+test('discontinued cloud links redirect to aimee and signup refuses new submissions', async (context) => {
+  if (needsBuild(context)) return;
+  const base = await withSite(context);
+  const sitemap = await (await fetch(`${base}/sitemap.xml`)).text();
+  assert.ok(!sitemap.includes('/cloud'));
+  assert.equal(existsSync(resolve(distDir, 'cloud/index.html')), false);
+  for (const path of ['/cloud', '/cloud/', '/cloud?campaign=old']) {
+    const response = await fetch(`${base}${path}`, { redirect: 'manual' });
+    assert.equal(response.status, 301);
+    assert.equal(response.headers.get('location'), '/products/aimee');
+  }
+  for (const method of ['GET', 'POST', 'HEAD']) {
+    const response = await fetch(`${base}/api/signup`, {
+      method,
+      ...(method === 'POST' ? { body: JSON.stringify({ email: 'retired@example.com' }), headers: { 'content-type': 'application/json' } } : {}),
+    });
+    assert.equal(response.status, 410);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    if (method === 'HEAD') assert.equal(await response.text(), '');
+    else assert.match((await response.json()).error, /discontinued/);
+  }
 });
 
 test('a path with no page behind it is not served as a copy of the home page', async (context) => {
@@ -315,4 +324,34 @@ test('the directory-index lookup cannot be walked out of dist', async (context) 
     assert.doesNotMatch(body, /createServer|"dependencies"/, `${path} leaked a file outside dist`);
     assert.match(res.headers.get('content-type') ?? '', /text\/html/, `${path} should fall back to the shell`);
   }
+});
+
+test('the project portfolio serves distinct discoverable pages and preserves the old platform URL', async (context) => {
+  if (needsBuild(context)) return;
+  const base = await withSite(context);
+  const sitemap = await (await fetch(`${base}/sitemap.xml`)).text();
+  const projects = [
+    ['aimee', 'aimee'], ['smoothnas', 'SmoothNAS'], ['smoothrouter', 'SmoothRouter'],
+    ['ouroboros-ring', 'ouroboros-ring'], ['smoothfs', 'SmoothFS'], ['nonraid', 'nonraid'],
+    ['smoothgui', 'SmoothGUI'], ['smoothiso', 'SmoothISO'], ['smoothkernel', 'SmoothKernel'],
+    ['smoothapt', 'smoothapt'], ['smoothnas-plugins', 'SmoothNAS plugins'],
+  ];
+  for (const [slug, name] of projects) {
+    const path = `/products/${slug}`;
+    const response = await fetch(`${base}${path}`);
+    assert.equal(response.status, 200, path);
+    const html = await response.text();
+    assert.ok(html.includes(`<title>${name} — Rakuen Software</title>`), path);
+    assert.ok(html.includes(`rel="canonical" href="https://rakuensoftware.com${path}"`), path);
+    assert.ok(sitemap.includes(`<loc>https://rakuensoftware.com${path}</loc>`), path);
+  }
+  for (const suffix of ['', '/', '?from=old-link']) {
+    const response = await fetch(`${base}/products/smoothiso-smoothkernel${suffix}`, { redirect: 'manual' });
+    assert.equal(response.status, 301);
+    assert.equal(response.headers.get('location'), `/products/smoothiso${suffix.startsWith('?') ? suffix : ''}`);
+  }
+  const head = await fetch(`${base}/products/smoothiso-smoothkernel`, { method: 'HEAD', redirect: 'manual' });
+  assert.equal(head.status, 301);
+  assert.equal(await head.text(), '');
+  assert.ok(!sitemap.includes('/products/smoothiso-smoothkernel'));
 });

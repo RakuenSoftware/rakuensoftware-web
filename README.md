@@ -18,7 +18,7 @@ npm run dev
 npm run build      # tsc -b && vite build -> dist/
 npm run preview    # serve the built output locally
 npm start          # public site :3000 + private analytics :3001
-npm test           # analytics aggregation and access-control tests
+npm test           # routing, SEO, content sync and analytics checks
 ```
 
 `dist/` is a static bundle. It is served in production by `server.mjs` on the
@@ -79,7 +79,7 @@ there previewed as the same generic card.
 `vite.config.ts` now has an `emit-seo` plugin that runs after the bundle and
 writes, into whatever `--outDir` the build used:
 
-- **one document per route** — `/`, `/blog`, `/cloud`, every `/products/<slug>`
+- **one document per route** — `/`, `/blog`, every `/products/<slug>`
   and every `/blog/<slug>` — as `<route>/index.html`, each with its own title,
   description, canonical, Open Graph and Twitter tags. Only the `<head>` is
   prerendered; the body is still the empty root div and React renders
@@ -91,12 +91,14 @@ writes, into whatever `--outDir` the build used:
 - **`robots.txt`** and **`sitemap.xml`**. Both used to 404 into the SPA fallback
   and answer `200 text/html`, which meant there was no sitemap to submit.
 
-`server.mjs` resolves a request to `<path>/index.html` when no file matches, and
-serves `/` from `cloud/index.html` when the `Host` is an aimee cloud hostname —
-the same decision `App.tsx` makes for the index route, so a share of
-`https://aimee.rakuensoftware.com/` previews as aimee cloud. Its canonical still
-points at `rakuensoftware.com/cloud`: one page on two addresses, one of them
-indexed.
+`server.mjs` resolves a request to `<path>/index.html` when no file matches.
+The company home page is served consistently on every hostname.
+
+aimee cloud has been discontinued. Its marketing page, hosted-product links,
+and signup collection/mail transport have been removed. `/cloud` permanently
+redirects to `/products/aimee`; `/api/signup` returns `410 Gone` without collecting
+or emailing data. The retired service is absent from the sitemap. Historical
+signup records are left untouched.
 
 Every tag comes from `lib/site-meta.mjs`, which the build and `Meta.tsx` both
 read — the prerendered document and the tags the router swaps in during
@@ -136,11 +138,38 @@ on its own moves nothing.
 
 ### Products
 
-Product copy lives in `src/content/products.ts`. Each entry drives both its card
-on the home page and its own `/products/<slug>` page.
+Product copy lives in `src/content/products.ts`. Each entry drives its categorized card on the home page, footer navigation, documentation
+links, connected projects, `/products/<slug>` overview and build-time SEO metadata.
+`PRODUCT_GROUPS` defines the shared directory and footer categories.
+
+The portfolio covers aimee, SmoothNAS, SmoothRouter, ouroboros-ring, SmoothFS,
+nonraid, SmoothGUI, SmoothISO, SmoothKernel, smoothapt and the SmoothNAS plugin
+family. SmoothRouter is the sole exception to Rakuen’s product source-release policy:
+its source will remain private, and distribution is limited to specific opt-in
+arrangements that may remain the only distribution model indefinitely. The
+product page explains the authors’ privacy and cybersecurity rationale.
+The former `/products/smoothiso-smoothkernel` URL permanently redirects to
+`/products/smoothiso`; SmoothKernel now has its own page.
+
+`resources` links to authoritative documentation; `related` contains product
+slugs and drives the connected-project navigation. Add new products here so
+the directory, footer, overview and sitemap stay in step.
 
 Keep it accurate: descriptions should reflect what the code actually does, not
-what a design document once planned.
+what a design document once planned. Check the repository visibility before linking
+source, and distinguish released features, opt-in functionality and research.
+Do not turn private research repositories into public product announcements.
+
+The October 2026 refresh was checked against the project repositories and
+current guides: aimee’s quickstart, compatibility and security documentation;
+ouroboros-ring’s specification and language implementations; SmoothFS’s support
+matrix and storage-mode contracts; SmoothISO’s offline build configuration;
+SmoothKernel and smoothapt’s package-delivery guides; and the SmoothNAS plugin
+catalog. Blog articles remain owned by rakuen-blog.
+
+After editing, run `npm run check`, `npm run build` and `npm test`. Check the
+built site at desktop and mobile widths, including project navigation, retired cloud links, the old platform redirect
+and per-project preview metadata.
 
 ### Blog
 
