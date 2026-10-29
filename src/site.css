@@ -13,14 +13,21 @@
 
 .site-wordmark__mark {
   display: grid;
-  width: 27px;
-  height: 27px;
+  width: 28px;
+  height: 28px;
   place-items: center;
-  border: 1px solid var(--sg-primary);
-  color: var(--sg-primary);
+  border-radius: var(--sg-radius-md);
+  background: var(--sg-primary);
+  color: var(--sg-on-accent);
   font-family: var(--sg-font-mono);
   font-size: 13px;
   font-weight: 700;
+}
+
+.site-footer-brand strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .site-footer-brand p {
@@ -51,32 +58,37 @@
 .home-principles__inner {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  max-width: var(--sg-content-max);
+  max-width: calc(var(--sg-content-max) + 48px);
   margin: 0 auto;
   padding: 0 24px;
 }
 
+/* Dividers only between columns, so the first and last texts line up with the
+ * content column instead of floating inside boxes of their own. */
 .home-principles p {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  padding: 18px 22px;
-  border-left: 1px solid var(--sg-border);
+  padding: 20px 24px;
 }
 
-.home-principles p:last-child {
-  border-right: 1px solid var(--sg-border);
+.home-principles p:first-child {
+  padding-left: 0;
+}
+
+.home-principles p + p {
+  border-left: 1px solid var(--sg-border);
 }
 
 .home-principles strong {
   color: var(--sg-text);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 650;
 }
 
 .home-principles span {
-  color: var(--sg-text-faint);
-  font-size: 12px;
+  color: var(--sg-text-secondary);
+  font-size: 13px;
 }
 
 .home-product-grid {
@@ -115,7 +127,7 @@
 .home-model-grid article > span {
   color: var(--sg-text-faint);
   font-family: var(--sg-font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.08em;
 }
 
@@ -139,7 +151,7 @@
 }
 
 .home-product > p {
-  max-width: 36ch;
+  max-width: 60ch;
   margin-top: 12px;
   color: var(--sg-text-secondary);
   font-size: 14px;
@@ -248,7 +260,7 @@
   gap: 14px;
   color: var(--sg-text-faint);
   font-family: var(--sg-font-mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
@@ -367,9 +379,8 @@
   }
 
   .home-principles p,
-  .home-principles p:last-child {
+  .home-principles p + p {
     padding: 18px 0;
-    border-right: 0;
     border-bottom: 1px solid var(--sg-border);
     border-left: 0;
   }
@@ -486,7 +497,9 @@
 
 /* The shared toggle inherits its icon color. Header actions sit on a dark band
  * in both palettes, so they must inherit on-dark text rather than body text. */
-.sg-siteheader__inner { max-width: calc(var(--sg-content-max) + 48px); }
+.sg-siteheader__inner,
+.sg-sitefooter__inner,
+.sg-sitefooter__bottom-inner { max-width: calc(var(--sg-content-max) + 48px); }
 .sg-siteheader__actions,
 .sg-siteheader__mobile-actions { color: var(--sg-on-dark); }
 /* Keep the original shared control reachable without opening the mobile menu. */
@@ -494,4 +507,63 @@
 @media (max-width: 860px) {
   .sg-siteheader__actions { display: flex; margin-left: auto; }
   .sg-siteheader__toggle { margin-left: 0; }
+}
+
+/* Header controls: icon buttons without a box. The shared styles outline both
+ * the theme toggle and the mobile menu button; on the dark header that frame
+ * reads as a stray border, so they get a quiet hover surface instead. */
+.sg-siteheader .sg-theme-toggle,
+.sg-siteheader__toggle {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  place-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--sg-radius-md);
+  background: transparent;
+  color: var(--sg-on-dark-muted);
+  opacity: 1;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.sg-siteheader .sg-theme-toggle:hover,
+.sg-siteheader__toggle:hover {
+  background: color-mix(in srgb, var(--sg-on-dark) 10%, transparent);
+  color: var(--sg-on-dark);
+}
+.sg-siteheader .sg-theme-toggle svg { width: 18px; height: 18px; }
+@media (prefers-reduced-motion: reduce) {
+  .sg-siteheader .sg-theme-toggle,
+  .sg-siteheader__toggle { transition: none; }
+}
+
+/* Links styled as SmoothGUI buttons (see ButtonLink). */
+.site-button-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+.site-button-link:hover { text-decoration: none; }
+.site-button-link:focus-visible { outline: 2px solid var(--sg-primary); outline-offset: 2px; }
+
+/* The hero and call to action are dark bands in both palettes, but the ghost
+ * button takes body text colour, which disappears there in light mode. Give it
+ * on-dark text and an outline so it reads as the secondary action. */
+.sg-hero--dark .sg-button--ghost,
+.sg-cta--dark .sg-button--ghost {
+  border-color: var(--sg-dark-border);
+  color: var(--sg-on-dark);
+}
+.sg-hero--dark .sg-button--ghost:hover,
+.sg-cta--dark .sg-button--ghost:hover {
+  border-color: var(--sg-on-dark-muted);
+  background: var(--sg-dark-surface-alt);
+  color: var(--sg-on-dark);
+}
+
+/* Narrow prose sections keep their reading width but start at the same left
+ * edge as the wide sections around them, instead of jumping to the centre. */
+.product-page .sg-section__inner--narrow,
+.home-source .sg-section__inner--narrow {
+  margin-left: max(0px, calc((100% - var(--sg-content-max)) / 2));
 }

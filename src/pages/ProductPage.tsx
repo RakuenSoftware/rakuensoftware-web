@@ -1,7 +1,6 @@
 import { Navigate, useParams } from 'react-router-dom';
 import {
   Badge,
-  Button,
   CallToAction,
   FeatureCard,
   FeatureGrid,
@@ -11,6 +10,7 @@ import {
 } from '@rakuensoftware/smoothgui';
 import { productBySlug } from '../content/products';
 import RouterLink from '../components/RouterLink';
+import ButtonLink from '../components/ButtonLink';
 import Meta from '../components/Meta';
 import { productMeta } from '../../lib/site-meta.mjs';
 
@@ -21,7 +21,7 @@ export default function ProductPage() {
   if (product == null) return <Navigate to="/404" replace />;
 
   return (
-    <>
+    <div className="product-page">
       <Meta {...productMeta(product)} />
 
       <div className="product-intro">
@@ -36,12 +36,10 @@ export default function ProductPage() {
           actions={
             <>
               {product.repo != null && (
-                <a href={product.repo} target="_blank" rel="noreferrer">
-                  <Button variant="primary">View on GitHub</Button>
-                </a>
+                <ButtonLink href={product.repo} variant="primary">View on GitHub</ButtonLink>
               )}
               {product.repo == null && product.resources.length > 0 && (
-                <a href="#documentation"><Button variant="primary">Browse packages</Button></a>
+                <ButtonLink href="#documentation" variant="primary">Browse packages</ButtonLink>
               )}
             </>
           }
@@ -111,9 +109,7 @@ export default function ProductPage() {
           title={`Build with ${product.name}`}
           description="Source, issues and releases are on GitHub."
           actions={
-            <a href={product.repo} target="_blank" rel="noreferrer">
-              <Button variant="primary">Open the repository</Button>
-            </a>
+            <ButtonLink href={product.repo} variant="primary">Open the repository</ButtonLink>
           }
         />
       ) : (
@@ -121,10 +117,10 @@ export default function ProductPage() {
           title={product.sourcePolicy != null ? `${product.name}: access by arrangement` : `Extend your SmoothNAS`}
           description={product.sourcePolicy != null ? 'Distribution is limited to specific opt-in arrangements and may remain that way indefinitely. Contact us to discuss access.' : 'Explore the application repositories above, or start with the SmoothNAS overview.'}
           actions={product.sourcePolicy != null
-            ? <a href="https://discord.gg/FjGjvcgAqz" target="_blank" rel="noreferrer"><Button variant="primary">Contact the community</Button></a>
-            : <RouterLink href="/products/smoothnas"><Button variant="primary">Explore SmoothNAS</Button></RouterLink>}
+            ? <ButtonLink href="https://discord.gg/FjGjvcgAqz" variant="primary">Contact the community</ButtonLink>
+            : <ButtonLink href="/products/smoothnas" variant="primary">Explore SmoothNAS</ButtonLink>}
         />
       )}
-    </>
+    </div>
   );
 }

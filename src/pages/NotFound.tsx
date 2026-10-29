@@ -1,5 +1,5 @@
-import { Button, Hero, Section } from '@rakuensoftware/smoothgui';
-import RouterLink from '../components/RouterLink';
+import { Hero, Section } from '@rakuensoftware/smoothgui';
+import ButtonLink from '../components/ButtonLink';
 import Meta from '../components/Meta';
 import { pageTitle } from '../../lib/site-meta.mjs';
 
@@ -12,7 +12,7 @@ export default function NotFound() {
       <Hero
         title="That page doesn’t exist"
         subtitle="The link may be out of date, or the page may have moved."
-        actions={<RouterLink href="/"><Button variant="primary">Back to the home page</Button></RouterLink>}
+        actions={<ButtonLink href="/" variant="primary">Back to the home page</ButtonLink>}
       />
       <Section width="narrow" />
     </>
