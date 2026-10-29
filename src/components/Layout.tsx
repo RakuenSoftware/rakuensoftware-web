@@ -2,33 +2,25 @@ import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { SiteFooter, SiteHeader, ThemeToggle } from '@rakuensoftware/smoothgui';
 import type { SiteFooterGroup, SiteNavItem } from '@rakuensoftware/smoothgui';
-import { PRODUCTS } from '../content/products';
+import { PRODUCTS, PRODUCT_GROUPS } from '../content/products';
 import RouterLink from './RouterLink';
 import { trackPageView } from '../lib/analytics';
-import { aimeeCloudHref, AIMEE_CLOUD_URL } from '../../lib/cloud-host.mjs';
 
-/* aimee cloud sits in the header beside the rest because it is a service
- * someone can sign up for, not a page about a product. Its href is decided per
- * render rather than baked into this list: on aimee.rakuensoftware.com the
- * service is the site, and a nav item there must not be an absolute link back
- * to the page the reader is already on. */
-function navItems(cloudHref: string): SiteNavItem[] {
-  return [
-    { label: 'Products', href: '/#products' },
-    { label: 'aimee cloud', href: cloudHref, external: cloudHref === AIMEE_CLOUD_URL },
-    { label: 'Blog', href: '/blog' },
-    { label: 'GitHub', href: 'https://github.com/RakuenSoftware', external: true },
-    { label: 'Discord', href: 'https://discord.gg/FjGjvcgAqz', external: true },
-  ];
-}
+const NAV_ITEMS: SiteNavItem[] = [
+  { label: 'Projects', href: '/#products' },
+  { label: 'Blog', href: '/blog' },
+  { label: 'GitHub', href: 'https://github.com/RakuenSoftware', external: true },
+  { label: 'Discord', href: 'https://discord.gg/FjGjvcgAqz', external: true },
+];
 
 const FOOTER_GROUPS: SiteFooterGroup[] = [
+  ...PRODUCT_GROUPS.map((group) => ({
+    title: group.title,
+    links: PRODUCTS.filter((product) => product.group === group.id)
+      .map((product) => ({ label: product.name, href: `/products/${product.slug}` })),
+  })),
   {
-    title: 'Products',
-    links: PRODUCTS.map((p) => ({ label: p.name, href: `/products/${p.slug}` })),
-  },
-  {
-    title: 'Project',
+    title: 'Community',
     links: [
       { label: 'Blog', href: '/blog' },
       { label: 'GitHub', href: 'https://github.com/RakuenSoftware', external: true },
@@ -39,7 +31,6 @@ const FOOTER_GROUPS: SiteFooterGroup[] = [
 
 export default function Layout() {
   const { pathname, hash, search } = useLocation();
-  const cloudHref = aimeeCloudHref(typeof window === 'undefined' ? '' : window.location.hostname);
 
   useEffect(() => {
     trackPageView(`${pathname}${search}`);
@@ -57,6 +48,7 @@ export default function Layout() {
 
   return (
     <>
+      <a href="#main-content" className="skip-link">Skip to content</a>
       <SiteHeader
         brand={
           <RouterLink href="/" className="site-wordmark">
@@ -64,19 +56,19 @@ export default function Layout() {
             <span>Rakuen Software</span>
           </RouterLink>
         }
-        items={navItems(cloudHref)}
-        activeHref={pathname.startsWith('/blog') ? '/blog' : undefined}
-        actions={<ThemeToggle defaultTheme="dark" storageKey="rakuen-theme" />}
+        items={NAV_ITEMS}
+        activeHref={pathname.startsWith('/blog') ? '/blog' : pathname.startsWith('/products/') ? '/#products' : undefined}
+        actions={<ThemeToggle />}
         linkComponent={RouterLink}
       />
-      <main>
+      <main id="main-content" tabIndex={-1}>
         <Outlet />
       </main>
       <SiteFooter
         brand={
           <div className="site-footer-brand">
             <strong><span aria-hidden="true">R / </span>Rakuen Software</strong>
-            <p>Linux storage, routing and AI tooling built on tools you already run.</p>
+            <p>AI working environments, Linux appliances and independent systems components.</p>
           </div>
         }
         groups={FOOTER_GROUPS}

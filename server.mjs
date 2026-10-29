@@ -3,8 +3,6 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { addressInCidr, buildSummary, createEventStore, normalizeEvent } from './lib/analytics.mjs';
-import { isCloudHost } from './lib/cloud-host.mjs';
-import { recordSignup, renderMail, sendMail, sendMailSmtp, validateSignup } from './lib/signup.mjs';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const distDir = resolve(root, 'dist');
@@ -18,24 +16,6 @@ const retentionDays = Number(process.env.ANALYTICS_RETENTION_DAYS ?? 400);
 const store = createEventStore(dataFile, retentionDays);
 const rateLimit = { startedAt: Date.now(), total: 0, visitors: new Map() };
 const postsDir = resolve(root, 'src/content/posts');
-
-/* aimee cloud signup. Handled here rather than by the aimee cloud API: the form
- * is a marketing-site concern, and posting it to the API host would put
- * unauthenticated public traffic on the machine holding customer knowledge
- * bases, and need CORS and a preflight to do what this process does
- * same-origin with neither. */
-const signupFile = resolve(process.env.SIGNUP_DATA_DIR ?? resolve(root, 'data'), 'signups.jsonl');
-const signupTo = process.env.SIGNUP_TO ?? '';
-const signupFrom = process.env.SIGNUP_FROM ?? `no-reply@${siteHost}`;
-const signupRate = { startedAt: Date.now(), byAddress: new Map() };
-/* SMTP by default. This service runs with NoNewPrivileges, which strips setuid
- * from exim's sendmail, so a subprocess cannot write the spool and fails with a
- * permission error that a shell running the same command never sees. Talking to
- * the local MTA over TCP needs no privileges and spawns nothing. Set
- * SIGNUP_TRANSPORT=sendmail for a host with no listening MTA. */
-const signupTransport = process.env.SIGNUP_TRANSPORT ?? 'smtp';
-const signupSmtpHost = process.env.SIGNUP_SMTP_HOST ?? '127.0.0.1';
-const signupSmtpPort = Number(process.env.SIGNUP_SMTP_PORT ?? 25);
 
 /* Which article slugs exist, so a retired one can answer 404 instead of 200.
  *
@@ -129,21 +109,6 @@ async function resolveInDist(pathname) {
   return (await isFile(indexFile)) ? indexFile : '';
 }
 
-/* Which prerendered page the index route should serve.
- *
- * aimee cloud is this same build on its own hostname, where App renders the
- * cloud page at "/" instead of the company home page. The served head has to
- * follow that decision, or every share of https://aimee.rakuensoftware.com/
- * previews as the Rakuen Software home page. The canonical inside that file
- * still points at rakuensoftware.com/cloud, which is what we want: it is one
- * page on two addresses, and only one of them should be indexed.
- */
-function indexRouteFor(req, pathname) {
-  if (pathname !== '/') return pathname;
-  const host = (req.headers.host ?? '').split(':')[0];
-  return isCloudHost(host) ? '/cloud' : '/';
-}
-
 function securityHeaders(extra = {}) {
   return {
     'content-security-policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'",
@@ -192,122 +157,15 @@ async function collect(req, res) {
   }
 }
 
-/* The address to attribute a request to.
- *
- * nginx proxies this app, so req.socket.remoteAddress is 127.0.0.1 for every
- * public request and rate limiting on it would be one shared bucket for the
- * whole internet. X-Forwarded-For carries the real client, but it is
- * attacker-controlled unless a proxy we run rewrote it, so it is trusted ONLY
- * when the connection itself came from loopback. This process also listens on
- * 0.0.0.0, so a request arriving from anywhere else is not behind our nginx and
- * its claim about who it is means nothing.
- */
-function clientAddress(req) {
-  const socketAddress = req.socket.remoteAddress ?? '';
-  const fromLoopback =
-    socketAddress === '127.0.0.1' || socketAddress === '::1' || socketAddress === '::ffff:127.0.0.1';
-  if (!fromLoopback) return socketAddress;
-  const forwarded = req.headers['x-forwarded-for'];
-  if (typeof forwarded !== 'string' || forwarded === '') return socketAddress;
-  /* Left-most is the original client; trustworthy because our own nginx
-   * appends rather than passing the client's value through. */
-  return forwarded.split(',')[0].trim() || socketAddress;
-}
-
-/* The one route on the public site that accepts input, so it is treated as
- * hostile: an 8 KiB cap from readJson, a per-address hourly limit, a honeypot
- * that reports success, and nothing the submitter typed is ever echoed back. */
-async function signup(req, res) {
-  const now = Date.now();
-  if (now - signupRate.startedAt >= 3_600_000) {
-    signupRate.startedAt = now;
-    signupRate.byAddress.clear();
-  }
-  const remoteIp = clientAddress(req);
-  const seen = signupRate.byAddress.get(remoteIp) ?? 0;
-  if (seen >= 5) {
-    return send(res, 429, JSON.stringify({ error: 'Too many attempts. Try again later.' }), {
-      'content-type': 'application/json',
-      'retry-after': '3600',
-    });
-  }
-  signupRate.byAddress.set(remoteIp, seen + 1);
-
-  let input;
-  try {
-    input = await readJson(req);
-  } catch {
-    return send(res, 400, JSON.stringify({ error: 'Could not read that form.' }), {
-      'content-type': 'application/json',
-    });
-  }
-
-  const checked = validateSignup(input);
-  if (checked.honeypot === true) {
-    /* Report success. A bot told it was caught tries again differently. */
-    console.log(JSON.stringify({ at: new Date().toISOString(), signup: 'honeypot', remoteIp }));
-    return send(res, 200, JSON.stringify({ ok: true, message: SIGNUP_OK }), {
-      'content-type': 'application/json',
-    });
-  }
-  if (checked.error != null) {
-    return send(res, 400, JSON.stringify({ error: checked.error }), {
-      'content-type': 'application/json',
-    });
-  }
-
-  const at = new Date().toISOString();
-  const record = { ...checked.signup, remoteIp, userAgent: req.headers['user-agent'] ?? '', at };
-  try {
-    await recordSignup(signupFile, record);
-  } catch (err) {
-    console.error('signup: could not record', err);
-    /* Deliberately does NOT name signupTo. That is a real mailbox, and echoing
-     * it in a public error hands it to anyone who can make the write fail. */
-    return send(res, 500, JSON.stringify({ error: 'Could not record that. Please try again shortly.' }), {
-      'content-type': 'application/json',
-    });
-  }
-
-  /* The record is on disk, so a send failure is logged and the visitor is still
-   * told yes: it is our problem to chase, not theirs to retry. */
-  if (signupTo !== '') {
-    const message = renderMail({
-      to: signupTo,
-      from: signupFrom,
-      signup: checked.signup,
-      at,
-      remoteIp,
-      userAgent: record.userAgent,
-    });
-    try {
-      if (signupTransport === 'sendmail') {
-        await sendMail(message);
-      } else {
-        await sendMailSmtp(message, {
-          host: signupSmtpHost,
-          port: signupSmtpPort,
-          from: signupFrom,
-          to: signupTo,
-        });
-      }
-    } catch (err) {
-      console.error('signup: recorded but mail failed', err);
-    }
-  } else {
-    console.warn('signup: SIGNUP_TO is unset, so nothing was emailed');
-  }
-  console.log(JSON.stringify({ at, signup: 'recorded', email: checked.signup.email, remoteIp }));
-  return send(res, 200, JSON.stringify({ ok: true, message: SIGNUP_OK }), {
-    'content-type': 'application/json',
-  });
-}
-
-const SIGNUP_OK = "Thanks. We'll email you a setup code shortly.";
-
 export async function servePublic(req, res) {
   const url = new URL(req.url ?? '/', 'http://localhost');
-  if (req.method === 'POST' && url.pathname === '/api/signup') return signup(req, res);
+  // The hosted service is discontinued. Never collect or email new signups.
+  if (/^\/api\/signup\/?$/.test(url.pathname)) {
+    return send(res, 410, req.method === 'HEAD' ? '' : JSON.stringify({ error: 'aimee cloud has been discontinued. Signups are closed.' }), {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+    });
+  }
   if (req.method === 'POST' && url.pathname === '/__analytics/pageview') return collect(req, res);
   if ((req.method === 'GET' || req.method === 'HEAD') && url.pathname === '/__analytics/health') return send(res, 204);
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'Method not allowed', { allow: 'GET, HEAD, POST' });
@@ -318,7 +176,13 @@ export async function servePublic(req, res) {
   } catch {
     return send(res, 400, 'Bad request');
   }
-  let file = await resolveInDist(indexRouteFor(req, requested));
+  if (/^\/products\/smoothiso-smoothkernel\/?$/.test(requested)) {
+    return send(res, 301, '', { location: `/products/smoothiso${url.search}` });
+  }
+  if (/^\/cloud\/?$/.test(requested)) {
+    return send(res, 301, '', { location: '/products/aimee' });
+  }
+  let file = await resolveInDist(requested);
   let status = 200;
   if (!file) {
     /* Nothing prerendered answers this path, so the app will render NotFound.
