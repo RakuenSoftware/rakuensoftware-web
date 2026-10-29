@@ -41,6 +41,12 @@ function ProductFacts({ product }: { product: Product }) {
             : product.sourcePolicy != null ? 'Private, by arrangement' : 'Per-application repositories'}
         </dd>
       </div>
+      {product.repo != null && (
+        <div>
+          <dt>License</dt>
+          <dd>{product.license ?? 'None published yet'}</dd>
+        </div>
+      )}
       {product.resources.length > 0 && (
         <div>
           <dt>Documentation</dt>
@@ -166,9 +172,9 @@ export default function ProductPage() {
       ) : (
         <CallToAction
           title={product.sourcePolicy != null ? `${product.name}: access by arrangement` : `Extend your SmoothNAS`}
-          description={product.sourcePolicy != null ? 'Distribution is limited to specific opt-in arrangements and may remain that way indefinitely. Contact us to discuss access.' : 'Explore the application repositories above, or start with the SmoothNAS overview.'}
+          description={product.sourcePolicy != null ? 'Ask on Discord to discuss an arrangement.' : 'Each plugin has its own repository above. SmoothNAS installs and runs them.'}
           actions={product.sourcePolicy != null
-            ? <ButtonLink href="https://discord.gg/FjGjvcgAqz" variant="primary">Contact the community</ButtonLink>
+            ? <ButtonLink href="https://discord.gg/FjGjvcgAqz" variant="primary">Ask on Discord</ButtonLink>
             : <ButtonLink href="/products/smoothnas" variant="primary">Explore SmoothNAS</ButtonLink>}
         />
       )}

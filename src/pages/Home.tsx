@@ -1,5 +1,5 @@
 import { CallToAction, Hero, Section } from '@rakuensoftware/smoothgui';
-import { PRODUCTS, PRODUCT_GROUPS } from '../content/products';
+import { PRODUCTS, PRODUCT_GROUPS, sourceLabel } from '../content/products';
 import { PUBLISHED_POSTS, formatDate } from '../lib/posts';
 import RouterLink from '../components/RouterLink';
 import ButtonLink from '../components/ButtonLink';
@@ -14,8 +14,8 @@ export default function Home() {
       <Meta {...STATIC_PAGES['/']} />
 
       <Hero
-        title={<>Software you can own.<br /><span className="home-hero__accent">From the runtime down.</span></>}
-        subtitle="Persistent AI work, Linux storage and networking, and the independent components underneath them. Run the systems on your hardware. Read the contracts. Keep control of your data."
+        title={<>Software you run yourself.<br /><span className="home-hero__accent">Down to the kernel.</span></>}
+        subtitle="Aimee keeps the memory and code index your AI tools work from. SmoothNAS and SmoothRouter run storage and networking on Debian. All three are built from components you can use on their own, and run on hardware you choose."
         actions={
           <>
             <ButtonLink href="#products" variant="primary">Explore the projects</ButtonLink>
@@ -26,15 +26,15 @@ export default function Home() {
 
       <section className="home-principles" aria-label="What Rakuen Software builds for">
         <div className="home-principles__inner">
-          <p><strong>Own the state</strong><span>Your memory, storage and configuration.</span></p>
-          <p><strong>Inspect the system</strong><span>Source, contracts and recovery paths.</span></p>
-          <p><strong>Build in the open</strong><span>Public source, with one deliberate exception.</span></p>
+          <p><strong>Keep the state</strong><span>AI memory, storage pools and network settings stay on your machines.</span></p>
+          <p><strong>Reach the tools</strong><span>The Linux tools under every interface stay usable from a shell.</span></p>
+          <p><strong>Read the source</strong><span>AGPL-3.0 for every project except SmoothRouter.</span></p>
         </div>
       </section>
 
       <div className="home-portfolio">
-        <Section id="products" title="Explore the Rakuen projects"
-          description="From an AI working environment to a local message ring: find the system you need, or the component you want to build with.">
+        <Section id="products" title="The projects"
+          description="Three systems you operate, the components they are built from, and the platform that installs and updates them.">
           <nav className="project-jump-links" aria-label="Project categories">
             {PRODUCT_GROUPS.map((group) => <a key={group.id} href={`#${group.id}`}>{group.title} <span aria-hidden="true">↓</span></a>)}
           </nav>
@@ -47,7 +47,7 @@ export default function Home() {
               <div className="home-product-grid">
                 {PRODUCTS.filter((product) => product.group === group.id).map((product) => (
                   <RouterLink key={product.slug} href={`/products/${product.slug}`} className="home-product">
-                    <span className="home-product__index">{product.status ?? (product.repo ? 'Open source' : 'Application catalog')}</span>
+                    <span className="home-product__index">{product.status ?? sourceLabel(product)}</span>
                     <h4>{product.name}</h4>
                     <p className="home-product__tagline">{product.tagline}</p>
                     <p>{product.summary}</p>
@@ -60,33 +60,11 @@ export default function Home() {
         </Section>
       </div>
 
-      <div className="home-operating-model">
-        <Section title="How the pieces fit">
-          <div className="home-model-grid">
-            <article>
-              <span>01</span>
-              <h3>Systems with their own state</h3>
-              <p>aimee owns the state around AI work. SmoothNAS orchestrates storage. SmoothRouter manages networking. Each keeps its responsibilities explicit.</p>
-            </article>
-            <article>
-              <span>02</span>
-              <h3>Components with public contracts</h3>
-              <p>ouroboros-ring connects local processes. SmoothFS handles storage placement. nonraid supplies parity. Each can evolve independently of its consumers.</p>
-            </article>
-            <article>
-              <span>03</span>
-              <h3>A platform maintained together</h3>
-              <p>SmoothGUI, SmoothISO, SmoothKernel and smoothapt share interface, installation, hardware support and package delivery across the appliances.</p>
-            </article>
-          </div>
-        </Section>
-      </div>
-
       <div className="home-source">
-        <Section title="Committed to public and open source code" width="narrow">
+        <Section title="Open source, with one exception" width="narrow">
           <div className="source-commitment">
-            <p>Every product and component here is public source that you can inspect, run and build on.</p>
-            <p><RouterLink href="/products/smoothrouter">SmoothRouter is the one exception.</RouterLink> It is a public-facing security device, and in the current security climate publishing its code is a different proposition. Its source stays private and is available only by opt-in arrangement, possibly indefinitely.</p>
+            <p>Every project here except SmoothRouter is open source under the AGPL-3.0. Code that runs inside the Linux kernel cannot be AGPL, so the SmoothFS kernel module is GPL-2.0-or-later, and SmoothKernel's configs and patches keep the kernel's GPL-2.0.</p>
+            <p><RouterLink href="/products/smoothrouter">SmoothRouter is the exception.</RouterLink> It faces the internet and guards the network behind it, and we are not convinced publishing its source is wise. The source is private for now and may never be released. Access is by opt-in arrangement.</p>
           </div>
         </Section>
       </div>
@@ -95,7 +73,7 @@ export default function Home() {
         <div className="home-writing">
           <Section
             title="Engineering, measured"
-            description="Release notes, design decisions and experiments—including the results that changed our minds."
+            description="Release notes, design decisions and experiments, including the results that changed our minds."
           >
             <div className="home-writing__grid">
               {recent.map((post, index) => (
@@ -115,7 +93,7 @@ export default function Home() {
       )}
 
       <CallToAction
-        title="Build with us. Run it your way."
+        title="Build with us"
         description="Read the source, open an issue, or tell us what you are building."
         actions={
           <>
