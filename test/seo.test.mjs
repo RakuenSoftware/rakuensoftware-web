@@ -241,7 +241,7 @@ test('the pages that are not articles serve their own head too', async (context)
   const base = await withSite(context);
 
   for (const [path, expected] of [
-    ['/', 'Rakuen Software — AI runtimes, Linux appliances and systems libraries'],
+    ['/', 'Rakuen Software — Self-hosted AI tooling and Linux appliances'],
     ['/blog', 'Blog — Rakuen Software'],
     ['/products/smoothnas', 'SmoothNAS — Rakuen Software'],
   ]) {
@@ -257,7 +257,7 @@ test('legacy service hosts now serve the company home instead of cloud signup', 
   for (const host of ['aimee.rakuensoftware.com', 'aimee.rakuensoft.com', 'rakuensoftware.com']) {
     const response = await getWithHost(site.address().port, '/', host);
     assert.equal(response.status, 200);
-    assert.ok(response.body.includes('<title>Rakuen Software — AI runtimes, Linux appliances and systems libraries</title>'));
+    assert.ok(response.body.includes('<title>Rakuen Software — Self-hosted AI tooling and Linux appliances</title>'));
     assert.doesNotMatch(response.body, /aimee cloud/);
   }
 });
@@ -331,7 +331,7 @@ test('the project portfolio serves distinct discoverable pages and preserves the
   const base = await withSite(context);
   const sitemap = await (await fetch(`${base}/sitemap.xml`)).text();
   const projects = [
-    ['aimee', 'aimee'], ['smoothnas', 'SmoothNAS'], ['smoothrouter', 'SmoothRouter'],
+    ['aimee', 'Aimee'], ['smoothnas', 'SmoothNAS'], ['smoothrouter', 'SmoothRouter'],
     ['ouroboros-ring', 'ouroboros-ring'], ['smoothfs', 'SmoothFS'], ['nonraid', 'nonraid'],
     ['smoothgui', 'SmoothGUI'], ['smoothiso', 'SmoothISO'], ['smoothkernel', 'SmoothKernel'],
     ['smoothapt', 'smoothapt'], ['smoothnas-plugins', 'SmoothNAS plugins'],

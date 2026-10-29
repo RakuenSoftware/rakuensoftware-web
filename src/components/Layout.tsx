@@ -68,7 +68,7 @@ export default function Layout() {
         brand={
           <div className="site-footer-brand">
             <strong><span className="site-wordmark__mark" aria-hidden="true">R</span>Rakuen Software</strong>
-            <p>AI working environments, Linux appliances and independent systems components.</p>
+            <p>Self-hosted AI tooling, Linux appliances and the components underneath them.</p>
           </div>
         }
         groups={FOOTER_GROUPS}
