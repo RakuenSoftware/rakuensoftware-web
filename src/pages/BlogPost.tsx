@@ -22,7 +22,7 @@ export default function BlogPost() {
         noindex={post.review}
       />
 
-      <Hero tone="light" title={post.title} subtitle={post.excerpt} />
+      <Hero title={post.title} subtitle={post.excerpt} />
 
       <Section width="narrow">
         {post.review && (

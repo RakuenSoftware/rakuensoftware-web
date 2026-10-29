@@ -40,7 +40,7 @@
 }
 
 .home-hero__accent {
-  color: var(--sg-primary);
+  color: color-mix(in srgb, var(--sg-primary) 45%, var(--sg-on-dark));
 }
 
 .home-principles {
@@ -75,7 +75,7 @@
 }
 
 .home-principles span {
-  color: var(--sg-text-secondary);
+  color: var(--sg-text-faint);
   font-size: 12px;
 }
 
@@ -113,7 +113,7 @@
 .home-product__index,
 .home-foundation__index,
 .home-model-grid article > span {
-  color: var(--sg-text-secondary);
+  color: var(--sg-text-faint);
   font-family: var(--sg-font-mono);
   font-size: 10px;
   letter-spacing: 0.08em;
@@ -246,7 +246,7 @@
 .home-post__meta {
   display: flex;
   gap: 14px;
-  color: var(--sg-text-secondary);
+  color: var(--sg-text-faint);
   font-family: var(--sg-font-mono);
   font-size: 9px;
   letter-spacing: 0.07em;
@@ -452,14 +452,14 @@
 .home-product { min-width: 0; }
 .home-product .home-product__tagline { color: var(--sg-text); font-weight: 600; }
 .home-product__index { text-transform: uppercase; }
-/* Breadcrumb and hero use the same themed surface and content column. */
-.product-intro { background: var(--sg-surface); }
+/* Keep the breadcrumb in the same dark band and content column as the hero. */
+.product-intro { background: var(--sg-dark-surface); }
 .product-intro .sg-hero { padding-top: 28px; }
-.product-breadcrumb { max-width: calc(var(--sg-content-max) + 48px); margin: 0 auto; padding: 24px 24px 0; color: var(--sg-text-secondary); font-size: 13px; }
-.product-breadcrumb a { color: var(--sg-text-secondary); text-decoration: none; }
-.product-breadcrumb a:hover { color: var(--sg-text); text-decoration: underline; }
-.product-breadcrumb a:focus-visible { outline: 2px solid var(--sg-primary); outline-offset: 4px; }
-.product-breadcrumb [aria-current="page"] { color: var(--sg-text); }
+.product-breadcrumb { max-width: calc(var(--sg-content-max) + 48px); margin: 0 auto; padding: 24px 24px 0; color: var(--sg-on-dark-muted); font-size: 13px; }
+.product-breadcrumb a { color: var(--sg-on-dark-muted); text-decoration: none; }
+.product-breadcrumb a:hover { color: var(--sg-on-dark); text-decoration: underline; }
+.product-breadcrumb a:focus-visible { outline: 2px solid var(--sg-on-dark); outline-offset: 4px; }
+.product-breadcrumb [aria-current="page"] { color: var(--sg-on-dark); }
 @media (max-width: 860px) {
   .product-breadcrumb { max-width: none; padding: 20px 16px 0; }
   .product-intro .sg-hero { padding-top: 24px; }
@@ -478,37 +478,14 @@
 .source-commitment p + p { margin-top: 16px; }
 .source-commitment a { color: var(--sg-primary); }
 
-/* The full site follows the selected palette, including its navigation and footer. */
-.sg-siteheader { background: var(--sg-surface); border-bottom-color: var(--sg-border); }
+/* The shared toggle inherits its icon color. Header actions sit on a dark band
+ * in both palettes, so they must inherit on-dark text rather than body text. */
 .sg-siteheader__inner { max-width: calc(var(--sg-content-max) + 48px); }
-.sg-siteheader__brand { color: var(--sg-text); }
-.sg-siteheader__link { color: var(--sg-text-secondary); }
-.sg-siteheader__link:hover,
-.sg-siteheader__link--active { color: var(--sg-primary); border-bottom-color: var(--sg-primary); }
-.sg-siteheader__toggle { background: var(--sg-surface); border-color: var(--sg-text-faint); color: var(--sg-text); }
-.sg-siteheader__mobile { border-top-color: var(--sg-border); }
-.sg-sitefooter { background: var(--sg-surface-alt); color: var(--sg-text-secondary); border-top: 1px solid var(--sg-border); }
-.sg-sitefooter__brand strong,
-.sg-sitefooter__group-title { color: var(--sg-text); }
-.sg-sitefooter__link { color: var(--sg-text-secondary); }
-.sg-sitefooter__link:hover { color: var(--sg-primary); }
-.sg-sitefooter__bottom { border-top-color: var(--sg-border); }
-
-/* Use shared semantic button variants, with an explicit border on every choice. */
-.site-theme { display: inline-flex; align-items: center; gap: 4px; color: var(--sg-text); }
-.site-theme__label { margin-right: 6px; color: var(--sg-text-secondary); font-size: 13px; }
-.site-theme .sg-button { min-height: 44px; padding: 9px 12px; border-color: var(--sg-text-faint); font-size: 13px; }
-.site-theme .sg-button[aria-pressed="true"],
-.site-theme .sg-button:hover:not(:disabled) { border-color: var(--sg-primary); }
-.site-theme .sg-button:focus-visible { outline: 2px solid var(--sg-primary); outline-offset: 3px; }
-/* Palette changes must not fade button text through an unreadable mid-color. */
-.sg-button { transition: none; }
-.sg-button--primary:active:not(:disabled) { background: var(--sg-primary-hover); border-color: var(--sg-primary-hover); color: var(--sg-on-accent); }
+.sg-siteheader__actions,
+.sg-siteheader__mobile-actions { color: var(--sg-on-dark); }
+/* Keep the original shared control reachable without opening the mobile menu. */
+.sg-siteheader__mobile-actions { display: none; }
 @media (max-width: 860px) {
-  .sg-siteheader__inner { height: auto; min-height: 70px; flex-wrap: wrap; row-gap: 0; }
-  .sg-siteheader__brand { padding: 18px 0; }
-  .sg-siteheader__toggle { order: 1; }
-  .sg-siteheader__actions { display: flex; order: 2; flex-basis: 100%; justify-content: flex-end; padding-bottom: 12px; }
-  .sg-siteheader__mobile-actions { display: none; }
-  [id] { scroll-margin-top: 130px; }
+  .sg-siteheader__actions { display: flex; margin-left: auto; }
+  .sg-siteheader__toggle { margin-left: 0; }
 }
