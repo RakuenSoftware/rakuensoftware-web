@@ -38,7 +38,7 @@ function fixture(t) {
   git(source, 'init', '-q', '-b', 'main');
   git(source, 'config', 'user.email', 'fixture@example.invalid');
   git(source, 'config', 'user.name', 'Deployment fixture');
-  for (const name of ['deploy.sh', 'autopublish.sh', 'rakuen-web.service']) {
+  for (const name of ['deploy.sh', 'verify.sh', 'autopublish.sh', 'rakuen-web.service']) {
     put(join(source, 'scripts', name), readFileSync(join(root, 'scripts', name)), true);
   }
   put(join(source, '.gitignore'), 'dist/\ndist.new/\ndist.prev/\nnode_modules/\n.last-*\n.publish.lock\n');
@@ -122,6 +122,20 @@ async function run(f, script = 'deploy.sh', extra = {}) {
     return { code: error.code, stdout: error.stdout, stderr: error.stderr };
   }
 }
+
+// Production and pull requests must run one gate. If either stops calling
+// verify.sh, a change can again pass review and then be rolled back on deploy.
+test('the deploy and the pull request check run the same release gate', () => {
+  const deploy = readFileSync(join(root, 'scripts/deploy.sh'), 'utf8');
+  const workflow = readFileSync(join(root, '.github/workflows/verify.yml'), 'utf8');
+  const gate = readFileSync(join(root, 'scripts/verify.sh'), 'utf8');
+  assert.match(deploy, /^scripts\/verify\.sh$/m);
+  assert.match(workflow, /^\s*pull_request:/m);
+  assert.match(workflow, /- run: scripts\/verify\.sh$/m);
+  for (const step of ['scripts/sync-articles.mjs', 'npx tsc --noEmit', 'npx vite build --outDir dist.new', 'npm test']) {
+    assert.ok(gate.includes(step), step);
+  }
+});
 
 test('a main update validates the candidate, deploys it and records the full live revision', async (t) => {
   const f = fixture(t);

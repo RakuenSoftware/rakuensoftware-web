@@ -1,0 +1,25 @@
+# Runs the same release gate as the production deploy (scripts/verify.sh), so a
+# pull request that the VPS would build, test and roll back cannot merge.
+name: verify
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # Match the website host.
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: scripts/verify.sh
