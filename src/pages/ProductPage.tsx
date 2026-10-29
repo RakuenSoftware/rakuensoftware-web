@@ -30,11 +30,11 @@ export default function ProductPage() {
         </nav>
 
         <Hero
+          eyebrow={product.status != null ? <Badge label={product.status} variant="neutral" /> : undefined}
           title={product.name}
           subtitle={product.summary}
           actions={
             <>
-              {product.status != null && <Badge label={product.status} variant="info" />}
               {product.repo != null && (
                 <a href={product.repo} target="_blank" rel="noreferrer">
                   <Button variant="primary">View on GitHub</Button>
